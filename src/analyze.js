@@ -3,10 +3,11 @@ const path = require('path');
 const parser = require('@babel/parser');
 const traverse = require('@babel/traverse').default;
 
-async function analyzeDependencies(rootFolderPath, fileType) {
+async function analyzeDependencies(folderPath, fileType) {
     const dependencyGraph = {};
 
     function shouldAnalyze(filePath) {
+        // Only analyze files that match the fileType and are outside node_modules
         return filePath.endsWith(`.${fileType}`) && !filePath.includes('node_modules');
     }
 
@@ -42,17 +43,44 @@ async function analyzeDependencies(rootFolderPath, fileType) {
                     analyzeFolder(filePath); // Recursive call for directories
                 }
             } else if (shouldAnalyze(filePath)) {
-                // Get the relative path with respect to the root folder
-                const relativeFilePath = path.relative(rootFolderPath, filePath);
                 const dependencies = getDependencies(filePath);
-                dependencyGraph[`\\${relativeFilePath}`] = dependencies; // Single backslash for JSON consistency
+                dependencyGraph[filePath] = dependencies.map(dep => {
+                    if (dep.startsWith('.')) {
+                        // Resolve relative imports to absolute paths
+                        return path.resolve(path.dirname(filePath), dep);
+                    }
+                    return dep; // Return module names as they are
+                });
             }
         });
     }
 
-    analyzeFolder(rootFolderPath);
+    analyzeFolder(folderPath);
 
-    return dependencyGraph;
+    // Create both relative and full path versions of the graph
+    const relativePathDependencyGraph = {};
+    const fullPathDependencyGraph = {};
+
+    Object.keys(dependencyGraph).forEach(fullPath => {
+        // Relative path from the root folder
+        const relativePath = path.relative(folderPath, fullPath).replace(/\\/g, '/');
+
+        // Populate the relative path dependency graph
+        relativePathDependencyGraph[`/${relativePath}`] = dependencyGraph[fullPath].map(dep => {
+            // Convert absolute dependency paths to relative ones for display
+            if (dep.startsWith(folderPath)) {
+                return `/${path.relative(folderPath, dep).replace(/\\/g, '/')}`;
+            }
+            return dep;
+        });
+
+        // Populate the full path dependency graph with consistent single forward slashes
+        fullPathDependencyGraph[fullPath.replace(/\\/g, '/')] = dependencyGraph[fullPath].map(dep => {
+            return dep.startsWith(folderPath) ? dep.replace(/\\/g, '/') : dep;
+        });
+    });
+
+    return { relativePathDependencyGraph, fullPathDependencyGraph };
 }
 
 module.exports = analyzeDependencies;

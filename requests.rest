@@ -5,14 +5,3 @@ Content-Type: application/json
     "folderPath": "C:\\Users\\ernes\\OneDrive\\1. GITHUB\\Personal\\Dependency-Visualizer",
     "fileType": "js"
 }
-
-
-###
-
-POST http://localhost:3000/analyze
-Content-Type: application/json
-
-{
-    "folderPath": "C:\Users\ernes\OneDrive\1. GITHUB\Personal\Dependency-Visualizer",
-    "fileType": "js"
-}
