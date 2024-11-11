@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dependency Visualizer</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Dependency Visualizer</h1>
+        <form id="analyzeForm">
+            <label for="folderPath">Root Folder Path:</label>
+            <input type="text" id="folderPath" name="folderPath" required>
+            
+            <label for="fileType">File Type:</label>
+            <input type="text" id="fileType" name="fileType" value="js" required>
+            
+            <button type="submit">Analyze</button>
+        </form>
+        
+        <div id="output">
+            <h2>Dependency Graph</h2>
+            <pre id="dependencyGraph"></pre>
+            <h3 id="cycleMessage"></h3>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
