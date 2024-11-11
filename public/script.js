@@ -25,7 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Analyze button click event
     analyzeButton.addEventListener('click', async () => {
-        const folderPath = folderPathInput.value;
+        const folderPath = folderPathInput.value.replace(/\\/g, '\\\\'); // Replace single \ with \\ for Windows paths
         const fileType = fileTypeInput.value;
 
         if (!folderPath || !fileType) {
