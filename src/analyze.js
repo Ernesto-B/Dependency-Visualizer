@@ -1,14 +1,12 @@
-// src/analyze.js
 const fs = require('fs');
 const path = require('path');
 const parser = require('@babel/parser');
 const traverse = require('@babel/traverse').default;
 
-async function analyzeDependencies(folderPath, fileType) {
+async function analyzeDependencies(rootFolderPath, fileType) {
     const dependencyGraph = {};
 
     function shouldAnalyze(filePath) {
-        // Only analyze files that match the fileType and are outside node_modules
         return filePath.endsWith(`.${fileType}`) && !filePath.includes('node_modules');
     }
 
@@ -44,13 +42,15 @@ async function analyzeDependencies(folderPath, fileType) {
                     analyzeFolder(filePath); // Recursive call for directories
                 }
             } else if (shouldAnalyze(filePath)) {
+                // Get the relative path with respect to the root folder
+                const relativeFilePath = path.relative(rootFolderPath, filePath);
                 const dependencies = getDependencies(filePath);
-                dependencyGraph[filePath] = dependencies;
+                dependencyGraph[`\\${relativeFilePath}`] = dependencies; // Single backslash for JSON consistency
             }
         });
     }
 
-    analyzeFolder(folderPath);
+    analyzeFolder(rootFolderPath);
 
     return dependencyGraph;
 }

@@ -10,21 +10,28 @@
     <div class="container">
         <h1>Dependency Visualizer</h1>
         <form id="analyzeForm">
-            <label for="folderPath">Root Folder Path:</label>
-            <input type="text" id="folderPath" name="folderPath" required>
+            <label for="folderPath">Folder Path:</label>
+            <input type="text" id="folderPath" placeholder="Enter folder path">
             
             <label for="fileType">File Type:</label>
-            <input type="text" id="fileType" name="fileType" value="js" required>
+            <input type="text" id="fileType" placeholder="Enter file type (e.g., js)">
             
-            <button type="submit">Analyze</button>
+            <button type="button" id="analyzeButton">Analyze</button>
         </form>
-        
-        <div id="output">
-            <h2>Dependency Graph</h2>
-            <pre id="dependencyGraph"></pre>
-            <h3 id="cycleMessage"></h3>
+
+        <h2>Dependency Graph</h2>
+        <div id="dependencyGraphContainer">
+            <p id="graphMessage" style="display: none;">Failed to connect to the server.</p>
+            <pre id="jsonView">
+                {
+                    "Dependency graph JSON data will appear here when available."
+                }
+            </pre>
         </div>
+
+        <button class="toggle-button" id="toggleJsonView">Hide JSON View</button>
     </div>
+
     <script src="script.js"></script>
 </body>
 </html>

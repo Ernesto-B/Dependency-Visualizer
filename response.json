@@ -1,0 +1,19 @@
+{
+    "dependencyGraph": {
+      "\\public\\script.js": [],
+      "\\server.js": [
+        "express",
+        "./src/analyze",
+        "path",
+        "cors"
+      ],
+      "\\src\\analyze.js": [
+        "fs",
+        "path",
+        "@babel/parser",
+        "@babel/traverse"
+      ],
+      "\\src\\utils.js": []
+    },
+    "hasCycles": false
+  }

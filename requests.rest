@@ -2,6 +2,6 @@ POST http://localhost:3000/analyze
 Content-Type: application/json
 
 {
-    "folderPath": "D:\\1. Local Working Files\\Personal Projects\\Dependency Visualizer",
+    "folderPath": "C:\\Users\\ernes\\OneDrive\\1. GITHUB\\Personal\\Dependency-Visualizer",
     "fileType": "js"
 }
