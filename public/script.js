@@ -146,7 +146,7 @@ document.addEventListener("DOMContentLoaded", () => {
         Object.keys(positions).forEach(node => {
             const { x: nodeX, y: nodeY } = positions[node];
             const distance = Math.sqrt((x - nodeX) ** 2 + (y - nodeY) ** 2);
-            if (distance <= 30) { // Node radius
+            if (distance <= 30) {
                 highlightedNode = node;
 
                 if (lastDependencyGraph[node]) {

@@ -26,16 +26,18 @@ app.post('/analyze', async (req, res) => {
 
         console.log("Dependency Graph:", relativePathDependencyGraph);
 
-        // Detect cycles in the relative path graph
-        const hasCycles = detectCycles(relativePathDependencyGraph);
+        // Detect cycles in the relative path graph and capture all files involved in circular dependencies
+        const cycleNodes = detectCycles(relativePathDependencyGraph); // Adjusted to return files involved in cycles
+        const hasCycles = cycleNodes.length > 0;
 
         // Log for debugging
-        console.log("Cycle Detection Result:", hasCycles);
+        console.log("Cycle Detection Result:", cycleNodes);
 
         res.json({
             dependencyGraph: relativePathDependencyGraph,
             fullPathDependencyGraph,
-            hasCycles // Return cycle detection result
+            hasCycles,
+            cycleNodes, // Send list of files involved in cycles
         });
     } catch (error) {
         console.error('Error analyzing dependencies:', error);
