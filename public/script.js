@@ -13,6 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const keyFilesText = document.getElementById('keyFiles');
     const numFilesText = document.getElementById('numFiles');
     const impactToggle = document.getElementById('impactToggle');
+    const scaleSlider = document.getElementById('scaleSlider'); // New scale slider
 
     let lastDependencyGraph = {};
     let positions = {};
@@ -28,6 +29,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let isCircularHighlightActive = false;
     let impactScores = {};
     let showImpactAnalysis = false;
+    let scaleMultiplier = 1; // Multiplier for node spacing
 
     // Reset the graph data
     function resetGraphData() {
@@ -134,6 +136,13 @@ document.addEventListener("DOMContentLoaded", () => {
         renderDependencyGraph(lastDependencyGraph);
     });
 
+    // Update scale multiplier on slider change
+    scaleSlider.addEventListener('input', (event) => {
+        scaleMultiplier = parseFloat(event.target.value);
+        initializePositions(lastDependencyGraph); // Recalculate positions with the new multiplier
+        renderDependencyGraph(lastDependencyGraph); // Re-render the graph
+    });
+
     // Panning and zooming functionality
     canvas.addEventListener("wheel", (event) => {
         event.preventDefault();
@@ -236,9 +245,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
             context.beginPath();
             context.arc(x, y, nodeRadius, 0, Math.PI * 2, false);
-            context.fillStyle = isCircularNode ? "#D8BFD8" // Light purple for circular dependency
-                             : isHighlighted ? (isSearchHighlight && node === highlightedNode ? "red" : "#f39c12") // Red for searched node, yellow for other highlights
-                             : (nodes.includes(node) ? "#61bffc" : "#ff9999"); // Blue for internal nodes, red for external nodes
+            context.fillStyle = isCircularNode ? "#D8BFD8"
+                             : isHighlighted ? (isSearchHighlight && node === highlightedNode ? "red" : "#f39c12")
+                             : (nodes.includes(node) ? "#61bffc" : "#ff9999");
             if (showImpactAnalysis && impactScores[node]) {
                 context.fillStyle = getImpactColor(impactScores[node]);
             }
@@ -252,7 +261,6 @@ document.addEventListener("DOMContentLoaded", () => {
             context.textAlign = "center";
             context.fillText(node, x, y + 4);
 
-            // Show impact score if impact analysis is enabled
             if (showImpactAnalysis && impactScores[node]) {
                 context.fillText(`Score: ${impactScores[node]}`, x, y + 20);
             }
@@ -265,9 +273,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const nodes = Object.keys(dependencyGraph);
         const centerX = canvas.width / 2;
         const centerY = canvas.height / 2;
-        const radius = Math.min(centerX, centerY) - 100;
+        const radius = (Math.min(centerX, centerY) - 100) * scaleMultiplier;
 
-        // Calculate positions for internal nodes (blue nodes) in a smaller circle
         const internalRadius = radius * 0.5;
         nodes.forEach((node, index) => {
             const angle = (2 * Math.PI * index) / nodes.length;
@@ -277,7 +284,6 @@ document.addEventListener("DOMContentLoaded", () => {
             };
         });
 
-        // Calculate positions for external nodes (red nodes) in a larger surrounding circle
         const externalDependencies = new Set();
         nodes.forEach((node) => {
             dependencyGraph[node].forEach((dep) => {
