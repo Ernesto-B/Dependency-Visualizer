@@ -44,8 +44,6 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             const result = await response.json();
             lastDependencyGraph = result.dependencyGraph;
-            positions = {}; // Reset positions for new graph
-            initializePositions(lastDependencyGraph);
             renderDependencyGraph(lastDependencyGraph);
 
             // Display JSON
@@ -90,7 +88,7 @@ document.addEventListener("DOMContentLoaded", () => {
             connectedNodes = [...lastDependencyGraph[searchFile], searchFile];
             renderDependencyGraph(lastDependencyGraph, true);
         } else {
-            alert("File not found in the dependency graph. Please make sure to search for the full file path in relation to the root folder.");
+            alert("File not found in the dependency graph.");
         }
     });
 
@@ -181,13 +179,17 @@ document.addEventListener("DOMContentLoaded", () => {
             initializePositions(dependencyGraph);
         }
 
-        // Draw edges
-        context.strokeStyle = "#ccc";
-        context.lineWidth = 1.5;
+        // Draw edges with conditional highlighting
         nodes.forEach((node) => {
             const { x: nodeX, y: nodeY } = positions[node];
             dependencyGraph[node].forEach((dep) => {
                 const { x: depX, y: depY } = positions[dep];
+                
+                // Highlight edge if both nodes are connected
+                const isHighlightedEdge = connectedNodes.includes(node) && connectedNodes.includes(dep);
+                context.strokeStyle = isHighlightedEdge ? "#f39c12" : "#ccc";
+                context.lineWidth = isHighlightedEdge ? 2 : 1.5;
+
                 context.beginPath();
                 context.moveTo(nodeX, nodeY);
                 context.lineTo(depX, depY);
