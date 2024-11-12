@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const highlightCircularButton = document.getElementById('highlightCircularButton');
     const keyFilesText = document.getElementById('keyFiles');
     const numFilesText = document.getElementById('numFiles');
-    const impactToggle = document.getElementById("impactToggle");
+    const impactToggle = document.getElementById('impactToggle');
 
     let lastDependencyGraph = {};
     let positions = {};
@@ -26,11 +26,22 @@ document.addEventListener("DOMContentLoaded", () => {
     let isPanning = false;
     let startX, startY;
     let isCircularHighlightActive = false;
-    let showImpactAnalysis = false;
     let impactScores = {};
 
     // Analyze button click
     analyzeButton.addEventListener('click', async () => {
+        // Reset data
+        positions = {};
+        highlightedNode = null;
+        connectedNodes = [];
+        circularDependencies = [];
+        keyFiles = [];
+        impactScores = {};
+        isCircularHighlightActive = false;
+        offsetX = 0;
+        offsetY = 0;
+        scale = 1;
+
         const folderPath = folderPathInput.value;
         if (!folderPath) {
             alert("Please provide the root folder path.");
@@ -64,9 +75,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 highlightCircularButton.style.display = 'none';
             }
 
-            // Calculate impact scores
-            impactScores = calculateImpactScores(lastDependencyGraph);
-
             // Key files
             const fileConnections = Object.keys(lastDependencyGraph).reduce((acc, file) => {
                 const connections = lastDependencyGraph[file].length;
@@ -83,15 +91,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // Number of files
             numFilesText.textContent = Object.keys(lastDependencyGraph).length;
+
+            // Calculate impact scores if toggle is active
+            if (impactToggle.checked) {
+                impactScores = calculateImpactScores(lastDependencyGraph);
+            }
+
         } catch (error) {
             alert(error.message);
         }
-    });
-
-    // Toggle Impact Analysis
-    impactToggle.addEventListener("change", () => {
-        showImpactAnalysis = impactToggle.checked;
-        renderDependencyGraph(lastDependencyGraph);
     });
 
     // Search button click
@@ -116,6 +124,16 @@ document.addEventListener("DOMContentLoaded", () => {
         } else {
             alert("No circular dependencies found.");
         }
+    });
+
+    // Impact analysis toggle
+    impactToggle.addEventListener('change', () => {
+        if (impactToggle.checked) {
+            impactScores = calculateImpactScores(lastDependencyGraph);
+        } else {
+            impactScores = {};
+        }
+        renderDependencyGraph(lastDependencyGraph);
     });
 
     // Panning and zooming functionality
@@ -211,35 +229,31 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         });
 
-        // Draw nodes with optional impact analysis coloring
+        // Draw nodes
         nodes.concat(Object.keys(positions).filter(node => !nodes.includes(node))).forEach((node) => {
             const { x, y } = positions[node];
             const isHighlighted = (highlightedNode === node) || connectedNodes.includes(node);
             const isCircularNode = isCircularHighlightActive && circularDependencies.includes(node);
 
-            // Determine fill color based on impact score if impact analysis is enabled
-            let fillColor = nodes.includes(node) ? "#61bffc" : "#ff9999";
-            if (showImpactAnalysis && impactScores[node] !== undefined) {
-                fillColor = getImpactColor(impactScores[node]); // Use impact color
-            }
-
             context.beginPath();
             context.arc(x, y, nodeRadius, 0, Math.PI * 2, false);
             context.fillStyle = isCircularNode ? "#D8BFD8" // Light purple for circular dependency
                              : isHighlighted ? (isSearchHighlight && node === highlightedNode ? "red" : "#f39c12") // Red for searched node, yellow for other highlights
-                             : fillColor;
+                             : impactScores[node] ? getImpactColor(impactScores[node]) // Color based on impact score
+                             : (nodes.includes(node) ? "#61bffc" : "#ff9999"); // Blue for internal nodes, red for external nodes
             context.fill();
             context.lineWidth = 2;
             context.strokeStyle = "#333";
             context.stroke();
 
-            // Draw node name and impact score if impact analysis is enabled
             context.font = "12px Arial";
             context.fillStyle = "#000";
             context.textAlign = "center";
             context.fillText(node, x, y + 4);
-            if (showImpactAnalysis && impactScores[node] !== undefined) {
-                context.fillText(`Impact: ${impactScores[node]}`, x, y + 18); // Display impact score below the node name
+
+            // Display impact score if applicable
+            if (impactScores[node]) {
+                context.fillText(`Score: ${impactScores[node]}`, x, y + 18);
             }
         });
 
