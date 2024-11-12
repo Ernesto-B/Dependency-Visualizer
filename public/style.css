@@ -14,7 +14,7 @@ body {
     border-radius: 8px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     width: 100%;
-    max-width: 600px;
+    max-width: 800px; /* Increased max-width */
     text-align: center;
 }
 
@@ -74,4 +74,10 @@ button.toggle-button {
     font-family: monospace;
     white-space: pre-wrap;
     margin-top: 10px;
+}
+
+#dependencyGraphSVG {
+    display: block;
+    margin: 0 auto;
+    border: 1px solid #ddd;
 }

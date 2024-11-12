@@ -3,31 +3,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const fileTypeInput = document.getElementById('fileType');
     const analyzeButton = document.getElementById('analyzeButton');
     const dependencyGraphContainer = document.getElementById('dependencyGraphContainer');
+    const canvas = document.getElementById('dependencyCanvas');
+    const context = canvas.getContext("2d");
     const jsonView = document.getElementById('jsonView');
     const graphMessage = document.getElementById('graphMessage');
-    const toggleButton = document.getElementById('toggleJsonView');
-    const dependencyGraphDiv = document.createElement("div");
-    dependencyGraphDiv.id = "dependencyGraph";
-    dependencyGraphDiv.style.height = "500px";
-    dependencyGraphContainer.appendChild(dependencyGraphDiv);
 
-    // Show JSON by default and hide message
-    jsonView.style.display = 'block';
-    graphMessage.style.display = 'none';
-    toggleButton.textContent = 'Hide JSON View';
-
-    // Toggle JSON visibility
-    toggleButton.addEventListener('click', () => {
-        if (jsonView.style.display === 'block') {
-            jsonView.style.display = 'none';
-            toggleButton.textContent = 'Show JSON View';
-        } else {
-            jsonView.style.display = 'block';
-            toggleButton.textContent = 'Hide JSON View';
-        }
-    });
-
-    // Analyze button click event
     analyzeButton.addEventListener('click', async () => {
         const folderPath = folderPathInput.value;
         const fileType = fileTypeInput.value;
@@ -54,68 +34,103 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const result = await response.json();
             const dependencyGraph = result.dependencyGraph;
-            const fullPathDependencyGraph = result.fullPathDependencyGraph;
-            const hasCycles = result.hasCycles;
-
-            // Display dependency graph in JSON view
             jsonView.textContent = JSON.stringify(dependencyGraph, null, 2);
-            graphMessage.textContent = hasCycles ? "Circular Dependencies Found." : "No Circular Dependencies Found.";
             graphMessage.style.display = 'block';
 
-            // Render visual dependency graph
-            renderDependencyGraph(fullPathDependencyGraph);
+            renderDependencyGraph(dependencyGraph);
         } catch (error) {
             graphMessage.textContent = error.message;
             graphMessage.style.display = 'block';
         }
     });
 
-    // Function to render dependency graph using vis-network
-    function renderDependencyGraph(fullPathDependencyGraph) {
-        const nodes = [];
-        const edges = [];
-
-        // Populate nodes and edges based on fullPathDependencyGraph
-        Object.keys(fullPathDependencyGraph).forEach((filePath) => {
-            const fileName = filePath.split("/").pop(); // Extract just the file name for label
-            nodes.push({ id: filePath, label: fileName });
-
-            // Add edges for each dependency
-            fullPathDependencyGraph[filePath].forEach(dependency => {
-                const depPath = Object.keys(fullPathDependencyGraph).find(path => path === dependency);
-                if (depPath) {
-                    edges.push({ from: filePath, to: depPath });
+    function renderDependencyGraph(dependencyGraph) {
+        const canvas = document.getElementById('dependencyCanvas');
+        const context = canvas.getContext("2d");
+        
+        // Clear the canvas
+        context.clearRect(0, 0, canvas.width, canvas.height);
+    
+        const nodes = Object.keys(dependencyGraph);
+        const nodeRadius = 30;
+        const positions = {}; // Store positions of nodes
+        const spacing = 150; // Space between nodes
+    
+        // Draw nodes
+        nodes.forEach((node, index) => {
+            const x = (index % 5) * spacing + 100;
+            const y = Math.floor(index / 5) * spacing + 100;
+            positions[node] = { x, y };
+    
+            // Draw the circle for each node
+            context.beginPath();
+            context.arc(x, y, nodeRadius, 0, Math.PI * 2, false);
+            context.fillStyle = "#61bffc";
+            context.fill();
+            context.lineWidth = 2;
+            context.strokeStyle = "#333";
+            context.stroke();
+    
+            // Add text for the node label
+            context.font = "12px Arial";
+            context.fillStyle = "#000";
+            context.textAlign = "center";
+            context.fillText(node, x, y + 4);
+        });
+    
+        // Draw edges and add placeholder nodes for missing dependencies
+        nodes.forEach((node) => {
+            const dependencies = dependencyGraph[node];
+            dependencies.forEach((dep) => {
+                if (!positions[dep]) {
+                    // Add placeholder node for missing dependency
+                    const placeholderX = Math.random() * (canvas.width - 2 * nodeRadius) + nodeRadius;
+                    const placeholderY = Math.random() * (canvas.height - 2 * nodeRadius) + nodeRadius;
+                    positions[dep] = { x: placeholderX, y: placeholderY };
+                    
+                    // Draw the placeholder node
+                    context.beginPath();
+                    context.arc(placeholderX, placeholderY, nodeRadius, 0, Math.PI * 2, false);
+                    context.fillStyle = "#ff9999"; // Different color for external dependencies
+                    context.fill();
+                    context.lineWidth = 2;
+                    context.strokeStyle = "#333";
+                    context.stroke();
+    
+                    // Label the placeholder node
+                    context.font = "12px Arial";
+                    context.fillStyle = "#000";
+                    context.textAlign = "center";
+                    context.fillText(dep, placeholderX, placeholderY + 4);
                 }
+    
+                // Draw line between nodes
+                const { x: x1, y: y1 } = positions[node];
+                const { x: x2, y: y2 } = positions[dep];
+    
+                context.beginPath();
+                context.moveTo(x1, y1);
+                context.lineTo(x2, y2);
+                context.strokeStyle = "#ccc";
+                context.lineWidth = 1.5;
+                context.stroke();
+    
+                // Draw arrowhead
+                const angle = Math.atan2(y2 - y1, x2 - x1);
+                const arrowSize = 8;
+                
+                // Reset path for arrowhead
+                context.beginPath();
+                context.moveTo(x2, y2);
+                context.lineTo(x2 - arrowSize * Math.cos(angle - Math.PI / 6), y2 - arrowSize * Math.sin(angle - Math.PI / 6));
+                context.lineTo(x2 - arrowSize * Math.cos(angle + Math.PI / 6), y2 - arrowSize * Math.sin(angle + Math.PI / 6));
+                context.lineTo(x2, y2);
+                context.fillStyle = "#ccc";
+                context.fill();
             });
         });
-
-        // Define network data and options
-        const data = { nodes: new vis.DataSet(nodes), edges: new vis.DataSet(edges) };
-        const options = {
-            nodes: {
-                shape: 'box',
-                margin: 10,
-                font: { align: 'left' },
-                color: { background: '#dae8fc', border: '#6c8ebf' }
-            },
-            edges: {
-                arrows: 'to',
-                color: { color: '#6c8ebf' }
-            },
-            layout: {
-                hierarchical: {
-                    direction: 'UD', // Up-Down layout
-                    sortMethod: 'directed',
-                    nodeSpacing: 150,
-                    levelSeparation: 200
-                }
-            },
-            physics: {
-                enabled: true // Disable physics for a cleaner layout
-            }
-        };
-
-        // Initialize and render the network
-        new vis.Network(dependencyGraphDiv, data, options);
     }
+    
+    
+    
 });
