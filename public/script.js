@@ -64,10 +64,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     analyzeButton.addEventListener('click', async () => {
         const folderPath = folderPathInput.value;
-        const fileType = fileTypeInput.value;
 
-        if (!folderPath || !fileType) {
-            alert("Please provide both folder path and file type.");
+        if (!folderPath) {
+            alert("Please provide the root folder path.");
             return;
         }
 
@@ -83,7 +82,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ folderPath, fileType })
+                body: JSON.stringify({ folderPath })
             });
 
             if (!response.ok) {

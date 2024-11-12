@@ -1,3 +1,4 @@
+// server.js
 const express = require('express');
 const cors = require('cors');
 const analyzeDependencies = require('./src/analyze');
@@ -10,17 +11,17 @@ app.use(cors());
 app.use(express.json());
 
 app.post('/analyze', async (req, res) => {
-    const { folderPath, fileType } = req.body;
+    const { folderPath } = req.body;
 
-    if (!folderPath || !fileType) {
-        return res.status(400).json({ error: 'Please provide both folderPath and fileType in the request body.' });
+    if (!folderPath) {
+        return res.status(400).json({ error: 'Please provide the folderPath in the request body.' });
     }
 
     try {
         const absoluteFolderPath = path.resolve(folderPath);
 
-        // Use the updated analyzeDependencies to get both relative and full path graphs
-        const { relativePathDependencyGraph, fullPathDependencyGraph } = await analyzeDependencies(absoluteFolderPath, fileType);
+        // Get both relative and full path graphs
+        const { relativePathDependencyGraph, fullPathDependencyGraph } = await analyzeDependencies(absoluteFolderPath);
 
         res.json({
             dependencyGraph: relativePathDependencyGraph,

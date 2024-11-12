@@ -1,3 +1,4 @@
+<!-- index.html: Remove fileType input -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -12,13 +13,10 @@
         <form id="analyzeForm">
             <label for="folderPath">Folder Path:</label>
             <input type="text" id="folderPath" placeholder="Enter folder path">
-            <label for="fileType">File Type:</label>
-            <input type="text" id="fileType" placeholder="Enter file type (e.g., js)">
             <button type="button" id="analyzeButton">Analyze</button>
         </form>
 
         <h2>Dependency Graph</h2>
-        <p>Works automatically for: js, ts, c++, c, python, go, java</p>
         <div class="graph-container">
             <div id="jsonView">Dependency graph JSON data will appear here when available.</div>
             <canvas id="dependencyCanvas" width="600" height="600"></canvas>
