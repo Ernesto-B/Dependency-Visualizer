@@ -44,6 +44,8 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             const result = await response.json();
             lastDependencyGraph = result.dependencyGraph;
+            positions = {}; // Reset positions for new graph
+            initializePositions(lastDependencyGraph);
             renderDependencyGraph(lastDependencyGraph);
 
             // Display JSON
@@ -88,7 +90,7 @@ document.addEventListener("DOMContentLoaded", () => {
             connectedNodes = [...lastDependencyGraph[searchFile], searchFile];
             renderDependencyGraph(lastDependencyGraph, true);
         } else {
-            alert("File not found in the dependency graph.");
+            alert("File not found in the dependency graph. Please make sure to search for the full file path in relation to the root folder.");
         }
     });
 

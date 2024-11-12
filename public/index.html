@@ -29,32 +29,32 @@
 
         <!-- Notification container on the right side of the main container -->
         <div class="notification-container" id="notificationContainer">
-            <h3>Notifications</h3>
+            <h3>Control Panel</h3>
             
             <!-- Search section -->
             <div class="notification-section">
                 <label for="searchFile">Search File:</label>
-                <input type="text" id="searchFile" placeholder="Enter filename to search">
+                <input type="text" id="searchFile" placeholder="/server.js">
                 <button id="searchButton">Search</button>
             </div>
 
             <!-- Circular dependencies information -->
             <div class="notification-section">
                 <h4>Circular Dependencies:</h4>
-                <p id="circularDependencies">Loading...</p>
+                <p id="circularDependencies">Waiting for analysis...</p>
                 <button id="highlightCircularButton" style="display: none;">Highlight Circular Dependency</button>
             </div>
 
             <!-- Key files information -->
             <div class="notification-section">
                 <h4>Key Files:</h4>
-                <p id="keyFiles">Loading...</p>
+                <p id="keyFiles">Waiting for analysis...</p>
             </div>
 
             <!-- Total number of files -->
             <div class="notification-section">
                 <h4>Number of Files:</h4>
-                <p id="numFiles">Loading...</p>
+                <p id="numFiles">Waiting for analysis...</p>
             </div>
         </div>
     </div>
