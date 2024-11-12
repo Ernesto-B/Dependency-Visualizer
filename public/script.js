@@ -1,3 +1,5 @@
+import { calculateImpactScores, getImpactColor } from './impactCalc.js';
+
 document.addEventListener("DOMContentLoaded", () => {
     const folderPathInput = document.getElementById('folderPath');
     const analyzeButton = document.getElementById('analyzeButton');
@@ -10,6 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const highlightCircularButton = document.getElementById('highlightCircularButton');
     const keyFilesText = document.getElementById('keyFiles');
     const numFilesText = document.getElementById('numFiles');
+    const impactToggle = document.getElementById("impactToggle");
 
     let lastDependencyGraph = {};
     let positions = {};
@@ -23,6 +26,8 @@ document.addEventListener("DOMContentLoaded", () => {
     let isPanning = false;
     let startX, startY;
     let isCircularHighlightActive = false;
+    let showImpactAnalysis = false;
+    let impactScores = {};
 
     // Analyze button click
     analyzeButton.addEventListener('click', async () => {
@@ -59,6 +64,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 highlightCircularButton.style.display = 'none';
             }
 
+            // Calculate impact scores
+            impactScores = calculateImpactScores(lastDependencyGraph);
+
             // Key files
             const fileConnections = Object.keys(lastDependencyGraph).reduce((acc, file) => {
                 const connections = lastDependencyGraph[file].length;
@@ -78,6 +86,12 @@ document.addEventListener("DOMContentLoaded", () => {
         } catch (error) {
             alert(error.message);
         }
+    });
+
+    // Toggle Impact Analysis
+    impactToggle.addEventListener("change", () => {
+        showImpactAnalysis = impactToggle.checked;
+        renderDependencyGraph(lastDependencyGraph);
     });
 
     // Search button click
@@ -197,26 +211,36 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         });
 
-        // Draw nodes
+        // Draw nodes with optional impact analysis coloring
         nodes.concat(Object.keys(positions).filter(node => !nodes.includes(node))).forEach((node) => {
             const { x, y } = positions[node];
             const isHighlighted = (highlightedNode === node) || connectedNodes.includes(node);
             const isCircularNode = isCircularHighlightActive && circularDependencies.includes(node);
 
+            // Determine fill color based on impact score if impact analysis is enabled
+            let fillColor = nodes.includes(node) ? "#61bffc" : "#ff9999";
+            if (showImpactAnalysis && impactScores[node] !== undefined) {
+                fillColor = getImpactColor(impactScores[node]); // Use impact color
+            }
+
             context.beginPath();
             context.arc(x, y, nodeRadius, 0, Math.PI * 2, false);
             context.fillStyle = isCircularNode ? "#D8BFD8" // Light purple for circular dependency
                              : isHighlighted ? (isSearchHighlight && node === highlightedNode ? "red" : "#f39c12") // Red for searched node, yellow for other highlights
-                             : (nodes.includes(node) ? "#61bffc" : "#ff9999"); // Blue for internal nodes, red for external nodes
+                             : fillColor;
             context.fill();
             context.lineWidth = 2;
             context.strokeStyle = "#333";
             context.stroke();
 
+            // Draw node name and impact score if impact analysis is enabled
             context.font = "12px Arial";
             context.fillStyle = "#000";
             context.textAlign = "center";
             context.fillText(node, x, y + 4);
+            if (showImpactAnalysis && impactScores[node] !== undefined) {
+                context.fillText(`Impact: ${impactScores[node]}`, x, y + 18); // Display impact score below the node name
+            }
         });
 
         context.restore();
