@@ -210,43 +210,46 @@ document.addEventListener("DOMContentLoaded", () => {
         context.save();
         context.translate(offsetX, offsetY);
         context.scale(scale, scale);
-
+    
         const nodes = Object.keys(dependencyGraph);
         const nodeRadius = 30;
-
+    
         if (Object.keys(positions).length === 0) {
             initializePositions(dependencyGraph);
         }
-
+    
         // Draw edges with conditional highlighting for direct connections only
         nodes.forEach((node) => {
             const { x: nodeX, y: nodeY } = positions[node];
             dependencyGraph[node].forEach((dep) => {
                 if (!positions[dep]) return; // Skip if dep position is undefined
+    
                 const { x: depX, y: depY } = positions[dep];
-
-                const isHighlightedEdge = highlightedNode === node && connectedNodes.includes(dep);
-                context.strokeStyle = isHighlightedEdge ? "#f39c12" : "#ccc";
-                context.lineWidth = isHighlightedEdge ? 2 : 1.5;
-
+                
+                // Highlight edge only if the edge is between the highlightedNode and its direct dependencies
+                const isDirectlyConnectedEdge = (node === highlightedNode && connectedNodes.includes(dep)) ||
+                                                (dep === highlightedNode && connectedNodes.includes(node));
+                context.strokeStyle = isDirectlyConnectedEdge ? "#f39c12" : "#ccc";
+                context.lineWidth = isDirectlyConnectedEdge ? 2 : 1.5;
+    
                 context.beginPath();
                 context.moveTo(nodeX, nodeY);
                 context.lineTo(depX, depY);
                 context.stroke();
             });
         });
-
+    
         // Draw nodes with impact analysis if enabled
         nodes.concat(Object.keys(positions).filter(node => !nodes.includes(node))).forEach((node) => {
             const { x, y } = positions[node];
             const isHighlighted = (highlightedNode === node) || connectedNodes.includes(node);
             const isCircularNode = isCircularHighlightActive && circularDependencies.includes(node);
-
+    
             context.beginPath();
             context.arc(x, y, nodeRadius, 0, Math.PI * 2, false);
-            context.fillStyle = isCircularNode ? "#D8BFD8"
-                : isHighlighted ? (isSearchHighlight && node === highlightedNode ? "red" : "#f39c12")
-                    : (nodes.includes(node) ? "#61bffc" : "#ff9999");
+            context.fillStyle = isCircularNode ? "#D8BFD8" // Light purple for circular dependency
+                             : isHighlighted ? (isSearchHighlight && node === highlightedNode ? "red" : "#f39c12") // Red for searched node, yellow for other highlights
+                             : (nodes.includes(node) ? "#61bffc" : "#ff9999"); // Blue for internal nodes, red for external nodes
             if (showImpactAnalysis && impactScores[node]) {
                 context.fillStyle = getImpactColor(impactScores[node]);
             }
@@ -254,19 +257,20 @@ document.addEventListener("DOMContentLoaded", () => {
             context.lineWidth = 2;
             context.strokeStyle = "#333";
             context.stroke();
-
+    
             context.font = "12px Arial";
             context.fillStyle = "#000";
             context.textAlign = "center";
             context.fillText(node, x, y + 4);
-
+    
+            // Show impact score if impact analysis is enabled
             if (showImpactAnalysis && impactScores[node]) {
                 context.fillText(`Score: ${impactScores[node]}`, x, y + 20);
             }
         });
-
+    
         context.restore();
-    }
+    }    
 
     // Initialize Positions Function with Scale Support for Both Internal and External Nodes
     function initializePositions(dependencyGraph) {
