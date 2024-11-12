@@ -1,10 +1,11 @@
 document.addEventListener("DOMContentLoaded", () => {
     const folderPathInput = document.getElementById('folderPath');
-    const fileTypeInput = document.getElementById('fileType');
     const analyzeButton = document.getElementById('analyzeButton');
     const canvas = document.getElementById('dependencyCanvas');
     const context = canvas.getContext("2d");
     const jsonView = document.getElementById('jsonView');
+    const warningMessage = document.createElement('p'); // Element for cycle warnings
+    warningMessage.style.color = 'red';
 
     let scale = 1;
     let offsetX = 0;
@@ -76,6 +77,8 @@ document.addEventListener("DOMContentLoaded", () => {
             offsetX = 0;
             offsetY = 0;
             context.clearRect(0, 0, canvas.width, canvas.height);
+            jsonView.textContent = '';
+            warningMessage.textContent = ''; // Clear any previous warnings
 
             const response = await fetch('http://localhost:3000/analyze', {
                 method: 'POST',
@@ -92,6 +95,11 @@ document.addEventListener("DOMContentLoaded", () => {
             const result = await response.json();
             const dependencyGraph = result.dependencyGraph;
             jsonView.textContent = JSON.stringify(dependencyGraph, null, 2);
+
+            if (result.hasCycles) {
+                warningMessage.textContent = 'Warning: Circular dependencies detected in the project.';
+                jsonView.parentNode.insertBefore(warningMessage, jsonView);
+            }
 
             lastDependencyGraph = dependencyGraph;
             initializePositions(dependencyGraph);
@@ -146,7 +154,6 @@ document.addEventListener("DOMContentLoaded", () => {
         const nodes = Object.keys(dependencyGraph);
         const nodeRadius = 30;
     
-        // Determine children and parents for both internal and external nodes
         const highlightedChildren = highlightedNode && dependencyGraph[highlightedNode] ? dependencyGraph[highlightedNode] : [];
         const highlightedParents = [];
         
@@ -158,7 +165,6 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         }
     
-        // Draw all edges first in normal color
         context.strokeStyle = "#ccc";
         context.lineWidth = 1.5;
         nodes.forEach((node) => {
@@ -172,9 +178,8 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         });
     
-        // Highlight edges connected to the selected node
         if (highlightedNode) {
-            context.strokeStyle = "#f39c12"; // Highlight color for connected edges
+            context.strokeStyle = "#f39c12";
             context.lineWidth = 2;
             
             highlightedChildren.forEach((child) => {
@@ -196,7 +201,6 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         }
     
-        // Draw nodes with highlighted ones in different colors
         nodes.concat(Array.from(new Set(Object.keys(positions).filter(node => !nodes.includes(node))))).forEach((node) => {
             const { x, y } = positions[node];
             const isHighlighted = node === highlightedNode || highlightedChildren.includes(node) || highlightedParents.includes(node);

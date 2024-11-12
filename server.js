@@ -2,6 +2,7 @@
 const express = require('express');
 const cors = require('cors');
 const analyzeDependencies = require('./src/analyze');
+const { detectCycles } = require('./src/utils'); // Import cycle detection function
 const path = require('path');
 
 const app = express();
@@ -23,10 +24,18 @@ app.post('/analyze', async (req, res) => {
         // Get both relative and full path graphs
         const { relativePathDependencyGraph, fullPathDependencyGraph } = await analyzeDependencies(absoluteFolderPath);
 
+        console.log("Dependency Graph:", relativePathDependencyGraph);
+
+        // Detect cycles in the relative path graph
+        const hasCycles = detectCycles(relativePathDependencyGraph);
+
+        // Log for debugging
+        console.log("Cycle Detection Result:", hasCycles);
+
         res.json({
             dependencyGraph: relativePathDependencyGraph,
             fullPathDependencyGraph,
-            hasCycles: false // Placeholder for cycle detection if needed
+            hasCycles // Return cycle detection result
         });
     } catch (error) {
         console.error('Error analyzing dependencies:', error);

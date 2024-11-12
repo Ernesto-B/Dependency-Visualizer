@@ -14,6 +14,27 @@ async function analyzeDependencies(folderPath) {
         return supportedExtensions.has(path.extname(filePath).toLowerCase()) && !filePath.includes('node_modules');
     }
 
+    function resolveDependencyPath(filePath, dependency) {
+        // Handle Python imports without extensions
+        if (dependency.startsWith('.') && path.extname(dependency) === '') {
+            const potentialPythonPath = path.resolve(path.dirname(filePath), dependency + '.py');
+            if (fs.existsSync(potentialPythonPath)) {
+                return potentialPythonPath;
+            }
+        }
+
+        if (!dependency.startsWith('.')) return dependency; // Return external module names as they are
+
+        // Attempt to resolve dependency with supported extensions
+        for (const ext of supportedExtensions) {
+            const fullPath = path.resolve(path.dirname(filePath), dependency + ext);
+            if (fs.existsSync(fullPath)) {
+                return fullPath;
+            }
+        }
+        return path.resolve(path.dirname(filePath), dependency); // Default to the original path if no extension matches
+    }
+
     function getDependencies(filePath) {
         const dependencies = [];
         const fileContent = fs.readFileSync(filePath, 'utf8');
@@ -35,7 +56,8 @@ async function analyzeDependencies(folderPath) {
             const importRegex = /(?:from\s+(\S+)\s+import\s+\S+|import\s+(\S+))/g;
             let match;
             while ((match = importRegex.exec(fileContent)) !== null) {
-                dependencies.push(match[1] || match[2]);
+                const dep = match[1] || match[2];
+                dependencies.push(dep.startsWith('.') ? dep : './' + dep); // Make relative if needed
             }
         } else if (ext === '.go') {
             const importRegex = /import\s+(?:\(\s*([\s\S]*?)\s*\)|"(.+?)")/g;
@@ -77,13 +99,7 @@ async function analyzeDependencies(folderPath) {
                 }
             } else if (shouldAnalyze(filePath)) {
                 const dependencies = getDependencies(filePath);
-                dependencyGraph[filePath] = dependencies.map(dep => {
-                    if (dep.startsWith('.')) {
-                        // Resolve relative imports to absolute paths
-                        return path.resolve(path.dirname(filePath), dep);
-                    }
-                    return dep; // Return module names as they are
-                });
+                dependencyGraph[filePath] = dependencies.map(dep => resolveDependencyPath(filePath, dep));
             }
         });
     }
