@@ -14,7 +14,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let lastDependencyGraph = {};
     let positions = {};
     let highlightedNode = null;
-    let connectedNodes = []; // Array to store connected nodes to highlight
+    let connectedNodes = [];
     let circularDependencies = [];
     let keyFiles = [];
     let scale = 1;
@@ -22,6 +22,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let offsetY = 0;
     let isPanning = false;
     let startX, startY;
+    let isCircularHighlightActive = false;
 
     // Analyze button click
     analyzeButton.addEventListener('click', async () => {
@@ -50,7 +51,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // Circular dependencies information
             if (result.hasCycles) {
-                circularDependencies = result.cycleNodes || []; // Use an empty array if undefined
+                circularDependencies = result.cycleNodes || []; // Set circular dependencies
                 circularDependenciesText.textContent = `True: ${circularDependencies.join(', ')}`;
                 highlightCircularButton.style.display = 'inline';
             } else {
@@ -85,7 +86,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (searchFile && lastDependencyGraph[searchFile]) {
             highlightedNode = searchFile;
             connectedNodes = [...lastDependencyGraph[searchFile], searchFile];
-            renderDependencyGraph(lastDependencyGraph);
+            renderDependencyGraph(lastDependencyGraph, true);
         } else {
             alert("File not found in the dependency graph.");
         }
@@ -94,9 +95,12 @@ document.addEventListener("DOMContentLoaded", () => {
     // Highlight circular dependencies
     highlightCircularButton.addEventListener('click', () => {
         if (circularDependencies.length > 0) {
-            highlightedNode = null; // Clear any single-node highlight
+            highlightedNode = null;
             connectedNodes = circularDependencies;
+            isCircularHighlightActive = true;
             renderDependencyGraph(lastDependencyGraph);
+        } else {
+            alert("No circular dependencies found.");
         }
     });
 
@@ -138,18 +142,16 @@ document.addEventListener("DOMContentLoaded", () => {
         const y = (event.clientY - rect.top - offsetY) / scale;
 
         highlightedNode = null;
-        connectedNodes = []; // Reset connected nodes
+        connectedNodes = [];
         Object.keys(positions).forEach(node => {
             const { x: nodeX, y: nodeY } = positions[node];
             const distance = Math.sqrt((x - nodeX) ** 2 + (y - nodeY) ** 2);
-            if (distance <= 30) { // 30 is the radius of each node
+            if (distance <= 30) { // Node radius
                 highlightedNode = node;
 
-                // Handle both internal and external nodes
                 if (lastDependencyGraph[node]) {
-                    connectedNodes = [...lastDependencyGraph[node], node]; // Include the node and its dependencies
+                    connectedNodes = [...lastDependencyGraph[node], node];
                 } else {
-                    // For external nodes, find all internal nodes that depend on it
                     connectedNodes = [node];
                     Object.keys(lastDependencyGraph).forEach(internalNode => {
                         if (lastDependencyGraph[internalNode].includes(node)) {
@@ -160,10 +162,11 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
 
+        isCircularHighlightActive = false;
         renderDependencyGraph(lastDependencyGraph);
     });
 
-    function renderDependencyGraph(dependencyGraph, highlightNodes = []) {
+    function renderDependencyGraph(dependencyGraph, isSearchHighlight = false) {
         context.clearRect(0, 0, canvas.width, canvas.height);
         context.save();
         context.translate(offsetX, offsetY);
@@ -172,7 +175,6 @@ document.addEventListener("DOMContentLoaded", () => {
         const nodes = Object.keys(dependencyGraph);
         const nodeRadius = 30;
 
-        // Calculate positions if not already set
         if (Object.keys(positions).length === 0) {
             initializePositions(dependencyGraph);
         }
@@ -194,11 +196,14 @@ document.addEventListener("DOMContentLoaded", () => {
         // Draw nodes
         nodes.concat(Object.keys(positions).filter(node => !nodes.includes(node))).forEach((node) => {
             const { x, y } = positions[node];
-            const isHighlighted = (highlightedNode === node) || connectedNodes.includes(node) || highlightNodes.includes(node);
+            const isHighlighted = (highlightedNode === node) || connectedNodes.includes(node);
+            const isCircularNode = isCircularHighlightActive && circularDependencies.includes(node);
 
             context.beginPath();
             context.arc(x, y, nodeRadius, 0, Math.PI * 2, false);
-            context.fillStyle = isHighlighted ? "#f39c12" : (nodes.includes(node) ? "#61bffc" : "#ff9999"); // Internal nodes are blue, external are red
+            context.fillStyle = isCircularNode ? "#D8BFD8" // Light purple for circular dependency
+                             : isHighlighted ? (isSearchHighlight && node === highlightedNode ? "red" : "#f39c12") // Red for searched node, yellow for other highlights
+                             : (nodes.includes(node) ? "#61bffc" : "#ff9999"); // Blue for internal nodes, red for external nodes
             context.fill();
             context.lineWidth = 2;
             context.strokeStyle = "#333";
