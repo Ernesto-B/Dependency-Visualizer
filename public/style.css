@@ -63,9 +63,9 @@ button.toggle-button {
 .graph-container {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: start;
     gap: 20px;
-    margin-top: 20px;
+    max-width: 1200px;
 }
 
 #jsonView {
@@ -82,7 +82,5 @@ button.toggle-button {
 
 #dependencyCanvas {
     border: 1px solid #ddd;
-    background-color: #f9f9f9;
-    width: 45%;
-    height: 600px;
+    cursor: grab;
 }
