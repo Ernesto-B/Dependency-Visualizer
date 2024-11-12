@@ -4,22 +4,108 @@ document.addEventListener("DOMContentLoaded", () => {
     const canvas = document.getElementById('dependencyCanvas');
     const context = canvas.getContext("2d");
     const jsonView = document.getElementById('jsonView');
-    const warningMessage = document.createElement('p'); // Element for cycle warnings
-    warningMessage.style.color = 'red';
+    const searchFileInput = document.getElementById('searchFile');
+    const searchButton = document.getElementById('searchButton');
+    const circularDependenciesText = document.getElementById('circularDependencies');
+    const highlightCircularButton = document.getElementById('highlightCircularButton');
+    const keyFilesText = document.getElementById('keyFiles');
+    const numFilesText = document.getElementById('numFiles');
 
+    let lastDependencyGraph = {};
+    let positions = {};
+    let highlightedNode = null;
+    let connectedNodes = []; // Array to store connected nodes to highlight
+    let circularDependencies = [];
+    let keyFiles = [];
     let scale = 1;
     let offsetX = 0;
     let offsetY = 0;
     let isPanning = false;
     let startX, startY;
-    let positions = {};
-    let highlightedNode = null; // Store the currently selected node for highlighting
 
+    // Analyze button click
+    analyzeButton.addEventListener('click', async () => {
+        const folderPath = folderPathInput.value;
+        if (!folderPath) {
+            alert("Please provide the root folder path.");
+            return;
+        }
+        try {
+            const response = await fetch('http://localhost:3000/analyze', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ folderPath })
+            });
+            if (!response.ok) {
+                throw new Error("Failed to connect to the server.");
+            }
+            const result = await response.json();
+            lastDependencyGraph = result.dependencyGraph;
+            renderDependencyGraph(lastDependencyGraph);
+
+            // Display JSON
+            jsonView.textContent = JSON.stringify(lastDependencyGraph, null, 2);
+
+            // Circular dependencies information
+            if (result.hasCycles) {
+                circularDependencies = result.cycleNodes || []; // Use an empty array if undefined
+                circularDependenciesText.textContent = `True: ${circularDependencies.join(', ')}`;
+                highlightCircularButton.style.display = 'inline';
+            } else {
+                circularDependenciesText.textContent = "False";
+                highlightCircularButton.style.display = 'none';
+            }
+
+            // Key files
+            const fileConnections = Object.keys(lastDependencyGraph).reduce((acc, file) => {
+                const connections = lastDependencyGraph[file].length;
+                acc[file] = connections;
+                lastDependencyGraph[file].forEach(dep => {
+                    acc[dep] = (acc[dep] || 0) + 1;
+                });
+                return acc;
+            }, {});
+
+            const maxConnections = Math.max(...Object.values(fileConnections));
+            keyFiles = Object.keys(fileConnections).filter(file => fileConnections[file] === maxConnections);
+            keyFilesText.textContent = keyFiles.join(', ');
+
+            // Number of files
+            numFilesText.textContent = Object.keys(lastDependencyGraph).length;
+        } catch (error) {
+            alert(error.message);
+        }
+    });
+
+    // Search button click
+    searchButton.addEventListener('click', () => {
+        const searchFile = searchFileInput.value.trim();
+        if (searchFile && lastDependencyGraph[searchFile]) {
+            highlightedNode = searchFile;
+            connectedNodes = [...lastDependencyGraph[searchFile], searchFile];
+            renderDependencyGraph(lastDependencyGraph);
+        } else {
+            alert("File not found in the dependency graph.");
+        }
+    });
+
+    // Highlight circular dependencies
+    highlightCircularButton.addEventListener('click', () => {
+        if (circularDependencies.length > 0) {
+            highlightedNode = null; // Clear any single-node highlight
+            connectedNodes = circularDependencies;
+            renderDependencyGraph(lastDependencyGraph);
+        }
+    });
+
+    // Panning and zooming functionality
     canvas.addEventListener("wheel", (event) => {
         event.preventDefault();
         const zoomIntensity = 0.1;
         scale += event.deltaY > 0 ? -zoomIntensity : zoomIntensity;
-        scale = Math.min(Math.max(0.1, scale), 3);
+        scale = Math.min(Math.max(0.5, scale), 3);
         renderDependencyGraph(lastDependencyGraph);
     });
 
@@ -45,75 +131,90 @@ document.addEventListener("DOMContentLoaded", () => {
         isPanning = false;
     });
 
+    // Click-to-highlight functionality
     canvas.addEventListener("click", (event) => {
         const rect = canvas.getBoundingClientRect();
         const x = (event.clientX - rect.left - offsetX) / scale;
         const y = (event.clientY - rect.top - offsetY) / scale;
 
-        // Check if a node was clicked
-        highlightedNode = null; // Reset the highlighted node on each click
+        highlightedNode = null;
+        connectedNodes = []; // Reset connected nodes
         Object.keys(positions).forEach(node => {
             const { x: nodeX, y: nodeY } = positions[node];
             const distance = Math.sqrt((x - nodeX) ** 2 + (y - nodeY) ** 2);
             if (distance <= 30) { // 30 is the radius of each node
                 highlightedNode = node;
+
+                // Handle both internal and external nodes
+                if (lastDependencyGraph[node]) {
+                    connectedNodes = [...lastDependencyGraph[node], node]; // Include the node and its dependencies
+                } else {
+                    // For external nodes, find all internal nodes that depend on it
+                    connectedNodes = [node];
+                    Object.keys(lastDependencyGraph).forEach(internalNode => {
+                        if (lastDependencyGraph[internalNode].includes(node)) {
+                            connectedNodes.push(internalNode);
+                        }
+                    });
+                }
             }
         });
 
-        renderDependencyGraph(lastDependencyGraph); // Re-render with highlighting
+        renderDependencyGraph(lastDependencyGraph);
     });
 
-    analyzeButton.addEventListener('click', async () => {
-        const folderPath = folderPathInput.value;
+    function renderDependencyGraph(dependencyGraph, highlightNodes = []) {
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        context.save();
+        context.translate(offsetX, offsetY);
+        context.scale(scale, scale);
 
-        if (!folderPath) {
-            alert("Please provide the root folder path.");
-            return;
-        }
+        const nodes = Object.keys(dependencyGraph);
+        const nodeRadius = 30;
 
-        try {
-            positions = {};
-            scale = 1;
-            offsetX = 0;
-            offsetY = 0;
-            context.clearRect(0, 0, canvas.width, canvas.height);
-            jsonView.textContent = '';
-            warningMessage.textContent = ''; // Clear any previous warnings
-
-            const response = await fetch('http://localhost:3000/analyze', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ folderPath })
-            });
-
-            if (!response.ok) {
-                throw new Error("Failed to connect to the server.");
-            }
-
-            const result = await response.json();
-            const dependencyGraph = result.dependencyGraph;
-            jsonView.textContent = JSON.stringify(dependencyGraph, null, 2);
-
-            if (result.hasCycles) {
-                warningMessage.textContent = 'Warning: Circular dependencies detected in the project.';
-                jsonView.parentNode.insertBefore(warningMessage, jsonView);
-            }
-
-            lastDependencyGraph = dependencyGraph;
+        // Calculate positions if not already set
+        if (Object.keys(positions).length === 0) {
             initializePositions(dependencyGraph);
-            renderDependencyGraph(dependencyGraph);
-        } catch (error) {
-            alert(error.message);
         }
-    });
 
-    let lastDependencyGraph = {}; 
+        // Draw edges
+        context.strokeStyle = "#ccc";
+        context.lineWidth = 1.5;
+        nodes.forEach((node) => {
+            const { x: nodeX, y: nodeY } = positions[node];
+            dependencyGraph[node].forEach((dep) => {
+                const { x: depX, y: depY } = positions[dep];
+                context.beginPath();
+                context.moveTo(nodeX, nodeY);
+                context.lineTo(depX, depY);
+                context.stroke();
+            });
+        });
+
+        // Draw nodes
+        nodes.concat(Object.keys(positions).filter(node => !nodes.includes(node))).forEach((node) => {
+            const { x, y } = positions[node];
+            const isHighlighted = (highlightedNode === node) || connectedNodes.includes(node) || highlightNodes.includes(node);
+
+            context.beginPath();
+            context.arc(x, y, nodeRadius, 0, Math.PI * 2, false);
+            context.fillStyle = isHighlighted ? "#f39c12" : (nodes.includes(node) ? "#61bffc" : "#ff9999"); // Internal nodes are blue, external are red
+            context.fill();
+            context.lineWidth = 2;
+            context.strokeStyle = "#333";
+            context.stroke();
+
+            context.font = "12px Arial";
+            context.fillStyle = "#000";
+            context.textAlign = "center";
+            context.fillText(node, x, y + 4);
+        });
+
+        context.restore();
+    }
 
     function initializePositions(dependencyGraph) {
         const nodes = Object.keys(dependencyGraph);
-        const nodeRadius = 30;
         const spacing = 150;
         positions = {};
 
@@ -143,82 +244,5 @@ document.addEventListener("DOMContentLoaded", () => {
             positions[dep] = { x, y };
             angle += (2 * Math.PI) / externalDependencies.size;
         });
-    }
-
-    function renderDependencyGraph(dependencyGraph) {
-        context.clearRect(0, 0, canvas.width, canvas.height);
-        context.save();
-        context.translate(offsetX, offsetY);
-        context.scale(scale, scale);
-    
-        const nodes = Object.keys(dependencyGraph);
-        const nodeRadius = 30;
-    
-        const highlightedChildren = highlightedNode && dependencyGraph[highlightedNode] ? dependencyGraph[highlightedNode] : [];
-        const highlightedParents = [];
-        
-        if (highlightedNode) {
-            nodes.forEach((node) => {
-                if (dependencyGraph[node].includes(highlightedNode)) {
-                    highlightedParents.push(node);
-                }
-            });
-        }
-    
-        context.strokeStyle = "#ccc";
-        context.lineWidth = 1.5;
-        nodes.forEach((node) => {
-            const { x: nodeX, y: nodeY } = positions[node];
-            dependencyGraph[node].forEach((dep) => {
-                const { x: depX, y: depY } = positions[dep];
-                context.beginPath();
-                context.moveTo(nodeX, nodeY);
-                context.lineTo(depX, depY);
-                context.stroke();
-            });
-        });
-    
-        if (highlightedNode) {
-            context.strokeStyle = "#f39c12";
-            context.lineWidth = 2;
-            
-            highlightedChildren.forEach((child) => {
-                const { x: childX, y: childY } = positions[child];
-                const { x: nodeX, y: nodeY } = positions[highlightedNode];
-                context.beginPath();
-                context.moveTo(nodeX, nodeY);
-                context.lineTo(childX, childY);
-                context.stroke();
-            });
-    
-            highlightedParents.forEach((parent) => {
-                const { x: parentX, y: parentY } = positions[parent];
-                const { x: nodeX, y: nodeY } = positions[highlightedNode];
-                context.beginPath();
-                context.moveTo(parentX, parentY);
-                context.lineTo(nodeX, nodeY);
-                context.stroke();
-            });
-        }
-    
-        nodes.concat(Array.from(new Set(Object.keys(positions).filter(node => !nodes.includes(node))))).forEach((node) => {
-            const { x, y } = positions[node];
-            const isHighlighted = node === highlightedNode || highlightedChildren.includes(node) || highlightedParents.includes(node);
-    
-            context.beginPath();
-            context.arc(x, y, nodeRadius, 0, Math.PI * 2, false);
-            context.fillStyle = isHighlighted ? "#f39c12" : (nodes.includes(node) ? "#61bffc" : "#ff9999");
-            context.fill();
-            context.lineWidth = 2;
-            context.strokeStyle = "#333";
-            context.stroke();
-    
-            context.font = "12px Arial";
-            context.fillStyle = "#000";
-            context.textAlign = "center";
-            context.fillText(node, x, y + 4);
-        });
-    
-        context.restore();
     }
 });

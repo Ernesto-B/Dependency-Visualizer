@@ -3,9 +3,18 @@ body {
     background-color: #f5f7fa;
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start;
     min-height: 100vh;
     margin: 0;
+}
+
+/* Wrapper to hold both main content and notification panel */
+.wrapper {
+    display: flex;
+    align-items: stretch; /* Ensure both columns extend to the same height */
+    gap: 20px;
+    max-width: 1400px;
+    width: 100%;
 }
 
 .container {
@@ -14,8 +23,10 @@ body {
     border-radius: 8px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     width: 100%;
-    max-width: 1000px; /* Increased max-width */
+    max-width: 1000px;
     text-align: center;
+    display: flex;
+    flex-direction: column;
 }
 
 h1 {
@@ -83,4 +94,54 @@ button.toggle-button {
 #dependencyCanvas {
     border: 1px solid #ddd;
     cursor: grab;
+}
+
+.notification-container {
+    width: 250px;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 10px;
+    box-sizing: border-box;
+    font-size: 14px;
+    color: #333;
+    position: sticky;
+    top: 115px; /* Aligns the top of notifications container with the "Folder Path" field */
+    height: 100%;
+    align-self: flex-start;
+    display: flex;
+    flex-direction: column;
+}
+
+.notification-container h3, .notification-container h4 {
+    margin-top: 0;
+    color: #e74c3c;
+}
+
+.notification-section {
+    margin-bottom: 15px;
+}
+
+.notification-section label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.notification-section input[type="text"] {
+    width: 100%;
+    padding: 5px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+}
+
+.notification-section button {
+    padding: 5px 10px;
+    font-size: 12px;
+    background-color: #4a90e2;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
 }

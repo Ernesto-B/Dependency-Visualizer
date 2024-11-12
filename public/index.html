@@ -1,4 +1,3 @@
-<!-- index.html: Remove fileType input -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,20 +7,58 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <h1>Dependency Visualizer</h1>
-        <form id="analyzeForm">
-            <label for="folderPath">Folder Path:</label>
-            <input type="text" id="folderPath" placeholder="Enter folder path">
-            <button type="button" id="analyzeButton">Analyze</button>
-        </form>
+    <!-- Wrapper div to hold the main container and the notifications panel -->
+    <div class="wrapper">
+        <!-- Main content container -->
+        <div class="container">
+            <h1>Dependency Visualizer</h1>
+            <form id="analyzeForm">
+                <label for="folderPath">Folder Path:</label>
+                <input type="text" id="folderPath" placeholder="Enter folder path">
+                <button type="button" id="analyzeButton">Analyze</button>
+            </form>
 
-        <h2>Dependency Graph</h2><p>Click on a node to see its connections. Works for: C, C++, Java, Python, JS, TS, Go </p>
-        <div class="graph-container">
-            <div id="jsonView">Dependency graph JSON data will appear here when available.</div>
-            <canvas id="dependencyCanvas" width="600" height="600"></canvas>
-        </div>        
+            <h2>Dependency Graph</h2>
+            <p>Click on a node to see its connections. Works for: C, C++, Java, Python, JS, TS, Go </p>
+            
+            <div class="graph-container">
+                <div id="jsonView">Dependency graph JSON data will appear here when available.</div>
+                <canvas id="dependencyCanvas" width="600" height="600"></canvas>
+            </div>
+        </div>
+
+        <!-- Notification container on the right side of the main container -->
+        <div class="notification-container" id="notificationContainer">
+            <h3>Notifications</h3>
+            
+            <!-- Search section -->
+            <div class="notification-section">
+                <label for="searchFile">Search File:</label>
+                <input type="text" id="searchFile" placeholder="Enter filename to search">
+                <button id="searchButton">Search</button>
+            </div>
+
+            <!-- Circular dependencies information -->
+            <div class="notification-section">
+                <h4>Circular Dependencies:</h4>
+                <p id="circularDependencies">Loading...</p>
+                <button id="highlightCircularButton" style="display: none;">Highlight Circular Dependency</button>
+            </div>
+
+            <!-- Key files information -->
+            <div class="notification-section">
+                <h4>Key Files:</h4>
+                <p id="keyFiles">Loading...</p>
+            </div>
+
+            <!-- Total number of files -->
+            <div class="notification-section">
+                <h4>Number of Files:</h4>
+                <p id="numFiles">Loading...</p>
+            </div>
+        </div>
     </div>
+
     <script src="script.js"></script>
 </body>
 </html>
