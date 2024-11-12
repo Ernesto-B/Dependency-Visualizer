@@ -6,23 +6,21 @@ document.addEventListener("DOMContentLoaded", () => {
     const context = canvas.getContext("2d");
     const jsonView = document.getElementById('jsonView');
 
-    let scale = 1; // Initial zoom scale
-    let offsetX = 0; // Initial horizontal offset
-    let offsetY = 0; // Initial vertical offset
+    let scale = 1;
+    let offsetX = 0;
+    let offsetY = 0;
     let isPanning = false;
     let startX, startY;
-    const positions = {}; // Store positions of nodes and placeholders
+    let positions = {};
 
-    // Event listener for mouse wheel to handle zooming
     canvas.addEventListener("wheel", (event) => {
         event.preventDefault();
         const zoomIntensity = 0.1;
         scale += event.deltaY > 0 ? -zoomIntensity : zoomIntensity;
-        scale = Math.min(Math.max(0.1, scale), 3); // Limit zoom scale
+        scale = Math.min(Math.max(0.1, scale), 3);
         renderDependencyGraph(lastDependencyGraph);
     });
 
-    // Event listeners for panning
     canvas.addEventListener("mousedown", (event) => {
         isPanning = true;
         startX = event.clientX - offsetX;
@@ -55,6 +53,13 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         try {
+            // Reset positions and scale for new analysis
+            positions = {};
+            scale = 1;
+            offsetX = 0;
+            offsetY = 0;
+            context.clearRect(0, 0, canvas.width, canvas.height);
+
             const response = await fetch('http://localhost:3000/analyze', {
                 method: 'POST',
                 headers: {
@@ -72,37 +77,48 @@ document.addEventListener("DOMContentLoaded", () => {
             jsonView.textContent = JSON.stringify(dependencyGraph, null, 2);
 
             lastDependencyGraph = dependencyGraph;
-            initializePositions(dependencyGraph); // Initialize positions only once
+            initializePositions(dependencyGraph);
             renderDependencyGraph(dependencyGraph);
         } catch (error) {
             alert(error.message);
         }
     });
 
-    let lastDependencyGraph = {}; // To store the last graph data for re-rendering on zoom or pan
+    let lastDependencyGraph = {}; 
 
-    // Initialize node positions
     function initializePositions(dependencyGraph) {
         const nodes = Object.keys(dependencyGraph);
         const nodeRadius = 30;
         const spacing = 150;
+        positions = {};
 
-        // Calculate and store positions for all nodes and placeholders once
+        // Blue nodes in grid layout
         nodes.forEach((node, index) => {
-            if (!positions[node]) {
-                const x = (index % 5) * spacing + 100;
-                const y = Math.floor(index / 5) * spacing + 100;
-                positions[node] = { x, y };
-            }
+            const x = (index % 5) * spacing + 100;
+            const y = Math.floor(index / 5) * spacing + 100;
+            positions[node] = { x, y };
+        });
 
-            // Initialize positions for each dependency if they don’t exist
+        // External dependencies in circular layout around grid area
+        let angle = 0;
+        const radius = Math.min(canvas.width, canvas.height) / 2 + 100;
+        const externalDependencies = new Set();
+
+        nodes.forEach((node) => {
             dependencyGraph[node].forEach((dep) => {
-                if (!positions[dep]) {
-                    const placeholderX = Math.random() * (canvas.width - 2 * nodeRadius) + nodeRadius;
-                    const placeholderY = Math.random() * (canvas.height - 2 * nodeRadius) + nodeRadius;
-                    positions[dep] = { x: placeholderX, y: placeholderY };
+                if (!nodes.includes(dep)) {
+                    externalDependencies.add(dep);
                 }
             });
+        });
+
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        externalDependencies.forEach((dep) => {
+            const x = centerX + radius * Math.cos(angle);
+            const y = centerY + radius * Math.sin(angle);
+            positions[dep] = { x, y };
+            angle += (2 * Math.PI) / externalDependencies.size;
         });
     }
 
@@ -115,7 +131,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const nodes = Object.keys(dependencyGraph);
         const nodeRadius = 30;
 
-        // Draw nodes
+        // Draw blue nodes
         nodes.forEach((node) => {
             const { x, y } = positions[node];
 
@@ -133,14 +149,13 @@ document.addEventListener("DOMContentLoaded", () => {
             context.fillText(node, x, y + 4);
         });
 
-        // Draw edges
+        // Draw edges and red nodes
         nodes.forEach((node) => {
             const dependencies = dependencyGraph[node];
             dependencies.forEach((dep) => {
                 const { x: x1, y: y1 } = positions[node];
                 const { x: x2, y: y2 } = positions[dep];
 
-                // Draw line between nodes
                 context.beginPath();
                 context.moveTo(x1, y1);
                 context.lineTo(x2, y2);
@@ -148,7 +163,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 context.lineWidth = 1.5;
                 context.stroke();
 
-                // Draw arrowhead
                 const angle = Math.atan2(y2 - y1, x2 - x1);
                 const arrowSize = 8;
 
@@ -159,19 +173,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 context.lineTo(x2, y2);
                 context.fillStyle = "#ccc";
                 context.fill();
-            });
-        });
 
-        // Draw placeholders for external dependencies
-        nodes.forEach((node) => {
-            const dependencies = dependencyGraph[node];
-            dependencies.forEach((dep) => {
-                if (!nodes.includes(dep)) { // External dependency
-                    const { x, y } = positions[dep];
-
+                if (!nodes.includes(dep)) {
                     context.beginPath();
-                    context.arc(x, y, nodeRadius, 0, Math.PI * 2, false);
-                    context.fillStyle = "#ff9999"; // Color for external dependencies
+                    context.arc(x2, y2, nodeRadius, 0, Math.PI * 2, false);
+                    context.fillStyle = "#ff9999";
                     context.fill();
                     context.lineWidth = 2;
                     context.strokeStyle = "#333";
@@ -180,7 +186,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     context.font = "12px Arial";
                     context.fillStyle = "#000";
                     context.textAlign = "center";
-                    context.fillText(dep, x, y + 4);
+                    context.fillText(dep, x2, y2 + 4);
                 }
             });
         });
