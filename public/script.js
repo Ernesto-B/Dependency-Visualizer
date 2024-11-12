@@ -12,6 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let isPanning = false;
     let startX, startY;
     let positions = {};
+    let highlightedNode = null; // Store the currently selected node for highlighting
 
     canvas.addEventListener("wheel", (event) => {
         event.preventDefault();
@@ -43,6 +44,24 @@ document.addEventListener("DOMContentLoaded", () => {
         isPanning = false;
     });
 
+    canvas.addEventListener("click", (event) => {
+        const rect = canvas.getBoundingClientRect();
+        const x = (event.clientX - rect.left - offsetX) / scale;
+        const y = (event.clientY - rect.top - offsetY) / scale;
+
+        // Check if a node was clicked
+        highlightedNode = null; // Reset the highlighted node on each click
+        Object.keys(positions).forEach(node => {
+            const { x: nodeX, y: nodeY } = positions[node];
+            const distance = Math.sqrt((x - nodeX) ** 2 + (y - nodeY) ** 2);
+            if (distance <= 30) { // 30 is the radius of each node
+                highlightedNode = node;
+            }
+        });
+
+        renderDependencyGraph(lastDependencyGraph); // Re-render with highlighting
+    });
+
     analyzeButton.addEventListener('click', async () => {
         const folderPath = folderPathInput.value;
         const fileType = fileTypeInput.value;
@@ -53,7 +72,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         try {
-            // Reset positions and scale for new analysis
             positions = {};
             scale = 1;
             offsetX = 0;
@@ -92,14 +110,12 @@ document.addEventListener("DOMContentLoaded", () => {
         const spacing = 150;
         positions = {};
 
-        // Blue nodes in grid layout
         nodes.forEach((node, index) => {
             const x = (index % 5) * spacing + 100;
             const y = Math.floor(index / 5) * spacing + 100;
             positions[node] = { x, y };
         });
 
-        // External dependencies in circular layout around grid area
         let angle = 0;
         const radius = Math.min(canvas.width, canvas.height) / 2 + 100;
         const externalDependencies = new Set();
@@ -131,13 +147,45 @@ document.addEventListener("DOMContentLoaded", () => {
         const nodes = Object.keys(dependencyGraph);
         const nodeRadius = 30;
 
-        // Draw blue nodes
+        // Draw nodes and edges
         nodes.forEach((node) => {
+            const isHighlighted = node === highlightedNode;
+            const connectedNodes = isHighlighted ? dependencyGraph[node] : [];
+            const { x: nodeX, y: nodeY } = positions[node];
+
+            // Draw connected edges first for highlighting
+            if (isHighlighted) {
+                context.strokeStyle = "#f39c12"; // Highlighted edge color
+                context.lineWidth = 2;
+                connectedNodes.forEach((dep) => {
+                    const { x: depX, y: depY } = positions[dep];
+                    context.beginPath();
+                    context.moveTo(nodeX, nodeY);
+                    context.lineTo(depX, depY);
+                    context.stroke();
+                });
+            }
+
+            // Draw all edges in normal color
+            context.strokeStyle = "#ccc";
+            context.lineWidth = 1.5;
+            dependencyGraph[node].forEach((dep) => {
+                const { x: depX, y: depY } = positions[dep];
+                context.beginPath();
+                context.moveTo(nodeX, nodeY);
+                context.lineTo(depX, depY);
+                context.stroke();
+            });
+        });
+
+        // Draw nodes (highlighted node in different color)
+        nodes.concat(Array.from(new Set(Object.keys(positions).filter(node => !nodes.includes(node))))).forEach((node) => {
             const { x, y } = positions[node];
+            const isHighlighted = node === highlightedNode || (highlightedNode && dependencyGraph[highlightedNode]?.includes(node));
 
             context.beginPath();
             context.arc(x, y, nodeRadius, 0, Math.PI * 2, false);
-            context.fillStyle = "#61bffc";
+            context.fillStyle = isHighlighted ? "#f39c12" : (nodes.includes(node) ? "#61bffc" : "#ff9999");
             context.fill();
             context.lineWidth = 2;
             context.strokeStyle = "#333";
@@ -147,48 +195,6 @@ document.addEventListener("DOMContentLoaded", () => {
             context.fillStyle = "#000";
             context.textAlign = "center";
             context.fillText(node, x, y + 4);
-        });
-
-        // Draw edges and red nodes
-        nodes.forEach((node) => {
-            const dependencies = dependencyGraph[node];
-            dependencies.forEach((dep) => {
-                const { x: x1, y: y1 } = positions[node];
-                const { x: x2, y: y2 } = positions[dep];
-
-                context.beginPath();
-                context.moveTo(x1, y1);
-                context.lineTo(x2, y2);
-                context.strokeStyle = "#ccc";
-                context.lineWidth = 1.5;
-                context.stroke();
-
-                const angle = Math.atan2(y2 - y1, x2 - x1);
-                const arrowSize = 8;
-
-                context.beginPath();
-                context.moveTo(x2, y2);
-                context.lineTo(x2 - arrowSize * Math.cos(angle - Math.PI / 6), y2 - arrowSize * Math.sin(angle - Math.PI / 6));
-                context.lineTo(x2 - arrowSize * Math.cos(angle + Math.PI / 6), y2 - arrowSize * Math.sin(angle + Math.PI / 6));
-                context.lineTo(x2, y2);
-                context.fillStyle = "#ccc";
-                context.fill();
-
-                if (!nodes.includes(dep)) {
-                    context.beginPath();
-                    context.arc(x2, y2, nodeRadius, 0, Math.PI * 2, false);
-                    context.fillStyle = "#ff9999";
-                    context.fill();
-                    context.lineWidth = 2;
-                    context.strokeStyle = "#333";
-                    context.stroke();
-
-                    context.font = "12px Arial";
-                    context.fillStyle = "#000";
-                    context.textAlign = "center";
-                    context.fillText(dep, x2, y2 + 4);
-                }
-            });
         });
 
         context.restore();
