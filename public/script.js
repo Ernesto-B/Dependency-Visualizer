@@ -205,6 +205,26 @@ document.addEventListener("DOMContentLoaded", () => {
         renderDependencyGraph(lastDependencyGraph);
     });
 
+    // Draw arrowhead in the middle of the edge
+    function drawArrowhead(x1, y1, x2, y2) {
+        const arrowLength = 10;
+        const midX = (x1 + x2) / 2;
+        const midY = (y1 + y2) / 2;
+        const angle = Math.atan2(y2 - y1, x2 - x1);
+        const arrowX1 = midX - arrowLength * Math.cos(angle - Math.PI / 6);
+        const arrowY1 = midY - arrowLength * Math.sin(angle - Math.PI / 6);
+        const arrowX2 = midX - arrowLength * Math.cos(angle + Math.PI / 6);
+        const arrowY2 = midY - arrowLength * Math.sin(angle + Math.PI / 6);
+
+        context.beginPath();
+        context.moveTo(midX, midY);
+        context.lineTo(arrowX1, arrowY1);
+        context.lineTo(arrowX2, arrowY2);
+        context.lineTo(midX, midY);
+        context.fillStyle = context.strokeStyle;
+        context.fill();
+    }
+
     function renderDependencyGraph(dependencyGraph, isSearchHighlight = false) {
         context.clearRect(0, 0, canvas.width, canvas.height);
         context.save();
@@ -236,6 +256,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 context.moveTo(nodeX, nodeY);
                 context.lineTo(depX, depY);
                 context.stroke();
+
+                // Draw arrowhead in the middle of the edge to indicate direction
+                drawArrowhead(nodeX, nodeY, depX, depY);
             });
         });
     
