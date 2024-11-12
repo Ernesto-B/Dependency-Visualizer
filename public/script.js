@@ -142,32 +142,27 @@ document.addEventListener("DOMContentLoaded", () => {
         context.save();
         context.translate(offsetX, offsetY);
         context.scale(scale, scale);
-
+    
         const nodes = Object.keys(dependencyGraph);
         const nodeRadius = 30;
-
-        // Draw nodes and edges
+    
+        // Determine children and parents for both internal and external nodes
+        const highlightedChildren = highlightedNode && dependencyGraph[highlightedNode] ? dependencyGraph[highlightedNode] : [];
+        const highlightedParents = [];
+        
+        if (highlightedNode) {
+            nodes.forEach((node) => {
+                if (dependencyGraph[node].includes(highlightedNode)) {
+                    highlightedParents.push(node);
+                }
+            });
+        }
+    
+        // Draw all edges first in normal color
+        context.strokeStyle = "#ccc";
+        context.lineWidth = 1.5;
         nodes.forEach((node) => {
-            const isHighlighted = node === highlightedNode;
-            const connectedNodes = isHighlighted ? dependencyGraph[node] : [];
             const { x: nodeX, y: nodeY } = positions[node];
-
-            // Draw connected edges first for highlighting
-            if (isHighlighted) {
-                context.strokeStyle = "#f39c12"; // Highlighted edge color
-                context.lineWidth = 2;
-                connectedNodes.forEach((dep) => {
-                    const { x: depX, y: depY } = positions[dep];
-                    context.beginPath();
-                    context.moveTo(nodeX, nodeY);
-                    context.lineTo(depX, depY);
-                    context.stroke();
-                });
-            }
-
-            // Draw all edges in normal color
-            context.strokeStyle = "#ccc";
-            context.lineWidth = 1.5;
             dependencyGraph[node].forEach((dep) => {
                 const { x: depX, y: depY } = positions[dep];
                 context.beginPath();
@@ -176,12 +171,36 @@ document.addEventListener("DOMContentLoaded", () => {
                 context.stroke();
             });
         });
-
-        // Draw nodes (highlighted node in different color)
+    
+        // Highlight edges connected to the selected node
+        if (highlightedNode) {
+            context.strokeStyle = "#f39c12"; // Highlight color for connected edges
+            context.lineWidth = 2;
+            
+            highlightedChildren.forEach((child) => {
+                const { x: childX, y: childY } = positions[child];
+                const { x: nodeX, y: nodeY } = positions[highlightedNode];
+                context.beginPath();
+                context.moveTo(nodeX, nodeY);
+                context.lineTo(childX, childY);
+                context.stroke();
+            });
+    
+            highlightedParents.forEach((parent) => {
+                const { x: parentX, y: parentY } = positions[parent];
+                const { x: nodeX, y: nodeY } = positions[highlightedNode];
+                context.beginPath();
+                context.moveTo(parentX, parentY);
+                context.lineTo(nodeX, nodeY);
+                context.stroke();
+            });
+        }
+    
+        // Draw nodes with highlighted ones in different colors
         nodes.concat(Array.from(new Set(Object.keys(positions).filter(node => !nodes.includes(node))))).forEach((node) => {
             const { x, y } = positions[node];
-            const isHighlighted = node === highlightedNode || (highlightedNode && dependencyGraph[highlightedNode]?.includes(node));
-
+            const isHighlighted = node === highlightedNode || highlightedChildren.includes(node) || highlightedParents.includes(node);
+    
             context.beginPath();
             context.arc(x, y, nodeRadius, 0, Math.PI * 2, false);
             context.fillStyle = isHighlighted ? "#f39c12" : (nodes.includes(node) ? "#61bffc" : "#ff9999");
@@ -189,13 +208,13 @@ document.addEventListener("DOMContentLoaded", () => {
             context.lineWidth = 2;
             context.strokeStyle = "#333";
             context.stroke();
-
+    
             context.font = "12px Arial";
             context.fillStyle = "#000";
             context.textAlign = "center";
             context.fillText(node, x, y + 4);
         });
-
+    
         context.restore();
     }
 });
