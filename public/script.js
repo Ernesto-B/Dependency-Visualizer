@@ -13,7 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const keyFilesText = document.getElementById('keyFiles');
     const numFilesText = document.getElementById('numFiles');
     const impactToggle = document.getElementById('impactToggle');
-    const scaleSlider = document.getElementById('scaleSlider'); // New scale slider
+    const scaleSlider = document.getElementById('scaleSlider');
 
     let lastDependencyGraph = {};
     let positions = {};
@@ -29,7 +29,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let isCircularHighlightActive = false;
     let impactScores = {};
     let showImpactAnalysis = false;
-    let scaleMultiplier = 1; // Multiplier for node spacing
+    let scaleMultiplier = 1;
 
     // Reset the graph data
     function resetGraphData() {
@@ -136,11 +136,11 @@ document.addEventListener("DOMContentLoaded", () => {
         renderDependencyGraph(lastDependencyGraph);
     });
 
-    // Update scale multiplier on slider change
+    // Scale slider functionality
     scaleSlider.addEventListener('input', (event) => {
         scaleMultiplier = parseFloat(event.target.value);
-        initializePositions(lastDependencyGraph); // Recalculate positions with the new multiplier
-        renderDependencyGraph(lastDependencyGraph); // Re-render the graph
+        initializePositions(lastDependencyGraph);
+        renderDependencyGraph(lastDependencyGraph);
     });
 
     // Panning and zooming functionality
@@ -218,15 +218,14 @@ document.addEventListener("DOMContentLoaded", () => {
             initializePositions(dependencyGraph);
         }
 
-        // Draw edges with conditional highlighting
+        // Draw edges with conditional highlighting for direct connections only
         nodes.forEach((node) => {
             const { x: nodeX, y: nodeY } = positions[node];
             dependencyGraph[node].forEach((dep) => {
                 if (!positions[dep]) return; // Skip if dep position is undefined
                 const { x: depX, y: depY } = positions[dep];
-                
-                // Highlight edge if both nodes are connected
-                const isHighlightedEdge = connectedNodes.includes(node) && connectedNodes.includes(dep);
+
+                const isHighlightedEdge = highlightedNode === node && connectedNodes.includes(dep);
                 context.strokeStyle = isHighlightedEdge ? "#f39c12" : "#ccc";
                 context.lineWidth = isHighlightedEdge ? 2 : 1.5;
 
@@ -246,8 +245,8 @@ document.addEventListener("DOMContentLoaded", () => {
             context.beginPath();
             context.arc(x, y, nodeRadius, 0, Math.PI * 2, false);
             context.fillStyle = isCircularNode ? "#D8BFD8"
-                             : isHighlighted ? (isSearchHighlight && node === highlightedNode ? "red" : "#f39c12")
-                             : (nodes.includes(node) ? "#61bffc" : "#ff9999");
+                : isHighlighted ? (isSearchHighlight && node === highlightedNode ? "red" : "#f39c12")
+                    : (nodes.includes(node) ? "#61bffc" : "#ff9999");
             if (showImpactAnalysis && impactScores[node]) {
                 context.fillStyle = getImpactColor(impactScores[node]);
             }
@@ -269,13 +268,19 @@ document.addEventListener("DOMContentLoaded", () => {
         context.restore();
     }
 
+    // Initialize Positions Function with Scale Support for Both Internal and External Nodes
     function initializePositions(dependencyGraph) {
         const nodes = Object.keys(dependencyGraph);
         const centerX = canvas.width / 2;
         const centerY = canvas.height / 2;
-        const radius = (Math.min(centerX, centerY) - 100) * scaleMultiplier;
+        const baseRadius = Math.min(centerX, centerY) - 100;
 
-        const internalRadius = radius * 0.5;
+        // Calculate scaled radius based on slider value
+        const scaledRadius = baseRadius * scaleMultiplier;
+        const internalRadius = scaledRadius * 0.5; // Blue nodes radius
+        const externalRadius = scaledRadius;       // Red nodes radius
+
+        // Position internal (blue) nodes in a smaller circle
         nodes.forEach((node, index) => {
             const angle = (2 * Math.PI * index) / nodes.length;
             positions[node] = {
@@ -284,6 +289,7 @@ document.addEventListener("DOMContentLoaded", () => {
             };
         });
 
+        // Calculate positions for external (red) nodes
         const externalDependencies = new Set();
         nodes.forEach((node) => {
             dependencyGraph[node].forEach((dep) => {
@@ -292,14 +298,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             });
         });
-        
+
         const externalNodes = Array.from(externalDependencies);
         externalNodes.forEach((node, index) => {
             const angle = (2 * Math.PI * index) / externalNodes.length;
             positions[node] = {
-                x: centerX + radius * Math.cos(angle),
-                y: centerY + radius * Math.sin(angle)
+                x: centerX + externalRadius * Math.cos(angle),
+                y: centerY + externalRadius * Math.sin(angle)
             };
         });
     }
+
 });
