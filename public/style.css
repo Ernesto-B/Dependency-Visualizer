@@ -14,7 +14,7 @@ body {
     border-radius: 8px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     width: 100%;
-    max-width: 800px; /* Increased max-width */
+    max-width: 1000px; /* Increased max-width */
     text-align: center;
 }
 
@@ -60,7 +60,11 @@ button.toggle-button {
     margin-top: 15px;
 }
 
-#dependencyGraphContainer {
+.graph-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 20px;
     margin-top: 20px;
 }
 
@@ -69,15 +73,16 @@ button.toggle-button {
     padding: 10px;
     border-radius: 4px;
     overflow: auto;
-    max-height: 400px;
-    text-align: left;
+    max-height: 600px;
+    width: 45%;
     font-family: monospace;
     white-space: pre-wrap;
-    margin-top: 10px;
+    text-align: left;
 }
 
-#dependencyGraphSVG {
-    display: block;
-    margin: 0 auto;
+#dependencyCanvas {
     border: 1px solid #ddd;
+    background-color: #f9f9f9;
+    width: 45%;
+    height: 600px;
 }

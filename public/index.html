@@ -16,13 +16,12 @@
             <input type="text" id="fileType" placeholder="Enter file type (e.g., js)">
             <button type="button" id="analyzeButton">Analyze</button>
         </form>
+
         <h2>Dependency Graph</h2>
-        <div id="dependencyGraphContainer">
-            <p id="graphMessage" style="display: none;">Failed to connect to the server.</p>
-            <pre id="jsonView">Dependency graph JSON data will appear here when available.</pre>
-            <!-- Canvas for rendering the graph -->
-            <canvas id="dependencyCanvas" width="800" height="600"></canvas>
-        </div>
+        <div class="graph-container">
+            <div id="jsonView">Dependency graph JSON data will appear here when available.</div>
+            <canvas id="dependencyCanvas" width="600" height="600"></canvas>
+        </div>        
     </div>
     <script src="script.js"></script>
 </body>
