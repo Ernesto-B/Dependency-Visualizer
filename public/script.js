@@ -144,14 +144,28 @@ document.addEventListener("DOMContentLoaded", () => {
     // Search button click
     searchButton.addEventListener('click', () => {
         const searchFile = searchFileInput.value.trim();
-        if (searchFile && lastDependencyGraph[searchFile]) {
+
+        if (searchFile && positions[searchFile]) {
             highlightedNode = searchFile;
-            connectedNodes = [...lastDependencyGraph[searchFile], searchFile];
+            connectedNodes = [searchFile];
+
+            // Add connected nodes to highlight
+            if (lastDependencyGraph[searchFile]) {
+                connectedNodes.push(...lastDependencyGraph[searchFile]);
+            } else {
+                Object.keys(lastDependencyGraph).forEach((internalNode) => {
+                    if (lastDependencyGraph[internalNode].includes(searchFile)) {
+                        connectedNodes.push(internalNode);
+                    }
+                });
+            }
+
             renderDependencyGraph(lastDependencyGraph, true);
         } else {
-            alert("File not found in the dependency graph.");
+            alert("Node not found in the dependency graph.");
         }
     });
+
 
     // Toggle impact analysis
     impactToggle.addEventListener('change', (event) => {
