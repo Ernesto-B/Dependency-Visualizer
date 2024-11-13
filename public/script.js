@@ -362,3 +362,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 });
+
+// Clear the input field
+document.addEventListener("DOMContentLoaded", () => {
+    const folderPathInput = document.getElementById('folderPath');
+    const clearInputButton = document.getElementById('clearInputButton');
+    
+    clearInputButton.addEventListener('click', () => {
+        folderPathInput.value = "";
+    });
+});
