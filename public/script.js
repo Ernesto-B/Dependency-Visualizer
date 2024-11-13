@@ -254,25 +254,47 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     
         // Draw edges with conditional highlighting for direct connections only
-        nodes.forEach((node) => {
-            const { x: nodeX, y: nodeY } = positions[node];
-            dependencyGraph[node].forEach((dep) => {
-                if (!positions[dep]) return; // Skip if dep position is undefined
-    
-                const { x: depX, y: depY } = positions[dep];
-                
-                // Highlight edge only if the edge is between the highlightedNode and its direct dependencies
-                const isDirectlyConnectedEdge = (node === highlightedNode && connectedNodes.includes(dep)) ||
-                                                (dep === highlightedNode && connectedNodes.includes(node));
-                context.strokeStyle = isDirectlyConnectedEdge ? "#f39c12" : "#ccc";
-                context.lineWidth = isDirectlyConnectedEdge ? 2 : 1.5;
-    
-                context.beginPath();
-                context.moveTo(nodeX, nodeY);
-                context.lineTo(depX, depY);
-                context.stroke();
-            });
-        });
+nodes.forEach((node) => {
+    const { x: nodeX, y: nodeY } = positions[node];
+    dependencyGraph[node].forEach((dep) => {
+        if (!positions[dep]) return; // Skip if dep position is undefined
+
+        const { x: depX, y: depY } = positions[dep];
+        
+        // Highlight edge only if the edge is between the highlightedNode and its direct dependencies
+        const isDirectlyConnectedEdge = (node === highlightedNode && connectedNodes.includes(dep)) ||
+                                        (dep === highlightedNode && connectedNodes.includes(node));
+        context.strokeStyle = isDirectlyConnectedEdge ? "#f39c12" : "#ccc";
+        context.lineWidth = isDirectlyConnectedEdge ? 2 : 1.5;
+
+        context.beginPath();
+        context.moveTo(nodeX, nodeY);
+        context.lineTo(depX, depY);
+        context.stroke();
+
+        // Add arrow in the middle of the edge
+        const arrowLength = 10; // Length of the arrowhead
+        const angle = Math.atan2(depY - nodeY, depX - nodeX);
+
+        // Calculate the position for the arrow
+        const arrowX = (nodeX + depX) / 2;
+        const arrowY = (nodeY + depY) / 2;
+
+        context.beginPath();
+        context.moveTo(arrowX, arrowY);
+        context.lineTo(
+            arrowX - arrowLength * Math.cos(angle - Math.PI / 6),
+            arrowY - arrowLength * Math.sin(angle - Math.PI / 6)
+        );
+        context.moveTo(arrowX, arrowY);
+        context.lineTo(
+            arrowX - arrowLength * Math.cos(angle + Math.PI / 6),
+            arrowY - arrowLength * Math.sin(angle + Math.PI / 6)
+        );
+        context.stroke();
+    });
+});
+
     
         // Draw nodes with impact analysis if enabled
         nodes.concat(Object.keys(positions).filter(node => !nodes.includes(node))).forEach((node) => {
