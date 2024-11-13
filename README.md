@@ -51,7 +51,7 @@ A tool to analyze and visualize dependencies within a specified project folder. 
 - [ ] Add functionality to export the graph as an image.
 - [ ] Field for folders to exclude from analysis.
 - [x] Moving nodes by click + drag.
-- [ ] Displaying key files all in new lines.
+- [x] Displaying key files all in new lines.
 - [ ] Displaying circular dependency files all in new lines.
 - [x] Making each of the control panel's "sections" be a dropdown to be able to hide unwanted controls.
 - [ ] Visualization of Dependency Chains: For files with high impact, show the chain of dependencies they influence (e.g., file A → file B → file C), allowing users to trace the flow of impact.
@@ -61,6 +61,6 @@ A tool to analyze and visualize dependencies within a specified project folder. 
 - [ ] Dark mode.
 - [ ] Highlight critical paths in the dependency graph (long chains of dependencies that have high impact) to help identify bottlenecks or areas where a single file’s change could cascade across multiple layers.
 Use different colors or bold lines to indicate files on the critical path... they may require additional testing or attention during development.
-- [ ] Count number of external dependencies for the root folder.
+- [x] Count number of external dependencies for the root folder.
 - [ ] Fullscreen graph mode.
 - [ ] Docker containerization (to be able to run the tool without having to first start the server, then open the HTML file).
