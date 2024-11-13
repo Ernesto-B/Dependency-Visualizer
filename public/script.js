@@ -45,6 +45,7 @@ document.addEventListener("DOMContentLoaded", () => {
         offsetY = 0;
         isCircularHighlightActive = false;
         impactScores = {};
+        movedNodes.clear(); 
     }
 
     // Make all dropdown sections open by default
@@ -154,6 +155,9 @@ document.addEventListener("DOMContentLoaded", () => {
         renderDependencyGraph(lastDependencyGraph);
     });
 
+    // Variable to store moved nodes
+    let movedNodes = new Set();
+
     canvas.addEventListener("mousedown", (event) => {
         const rect = canvas.getBoundingClientRect();
         const x = (event.clientX - rect.left - offsetX) / scale;
@@ -188,6 +192,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const y = (event.clientY - rect.top - offsetY) / scale;
 
             positions[draggedNode] = { x, y };
+            movedNodes.add(draggedNode); // Mark the node as moved
             renderDependencyGraph(lastDependencyGraph);
         }
     });
@@ -358,11 +363,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Position internal (blue) nodes in a smaller circle
         nodes.forEach((node, index) => {
-            const angle = (2 * Math.PI * index) / nodes.length;
-            positions[node] = {
-                x: centerX + internalRadius * Math.cos(angle),
-                y: centerY + internalRadius * Math.sin(angle)
-            };
+            if (!movedNodes.has(node)) { // Only set position if node hasn't been moved
+                const angle = (2 * Math.PI * index) / nodes.length;
+                positions[node] = {
+                    x: centerX + internalRadius * Math.cos(angle),
+                    y: centerY + internalRadius * Math.sin(angle)
+                };
+            }
         });
 
         // Calculate positions for external (red) nodes
@@ -377,11 +384,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const externalNodes = Array.from(externalDependencies);
         externalNodes.forEach((node, index) => {
-            const angle = (2 * Math.PI * index) / externalNodes.length;
-            positions[node] = {
-                x: centerX + externalRadius * Math.cos(angle),
-                y: centerY + externalRadius * Math.sin(angle)
-            };
+            if (!movedNodes.has(node)) { // Only set position if node hasn't been moved
+                const angle = (2 * Math.PI * index) / externalNodes.length;
+                positions[node] = {
+                    x: centerX + externalRadius * Math.cos(angle),
+                    y: centerY + externalRadius * Math.sin(angle)
+                };
+            }
         });
     }
 
