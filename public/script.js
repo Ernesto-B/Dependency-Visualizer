@@ -30,6 +30,9 @@ document.addEventListener("DOMContentLoaded", () => {
     let impactScores = {};
     let showImpactAnalysis = false;
     let scaleMultiplier = 1;
+    let isDraggingNode = false;
+    let draggedNode = null;
+    let isSpacebarPressed = false;
 
     // Reset the graph data
     function resetGraphData() {
@@ -153,6 +156,20 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     canvas.addEventListener("mousedown", (event) => {
+        const rect = canvas.getBoundingClientRect();
+        const x = (event.clientX - rect.left - offsetX) / scale;
+        const y = (event.clientY - rect.top - offsetY) / scale;
+
+        // Check if a node is clicked for dragging only if spacebar is pressed
+        if (isSpacebarPressed) {
+            draggedNode = getNodeAtPosition(x, y);
+            if (draggedNode) {
+                isDraggingNode = true;
+                return;
+            }
+        }
+
+        // If no node is clicked or dragging is disabled, initiate panning
         isPanning = true;
         startX = event.clientX - offsetX;
         startY = event.clientY - offsetY;
@@ -164,66 +181,59 @@ document.addEventListener("DOMContentLoaded", () => {
             offsetY = event.clientY - startY;
             renderDependencyGraph(lastDependencyGraph);
         }
+
+        // Handle dragging of nodes
+        if (isDraggingNode && draggedNode) {
+            const rect = canvas.getBoundingClientRect();
+            const x = (event.clientX - rect.left - offsetX) / scale;
+            const y = (event.clientY - rect.top - offsetY) / scale;
+
+            positions[draggedNode] = { x, y };
+            renderDependencyGraph(lastDependencyGraph);
+        }
     });
 
-    canvas.addEventListener("mouseup", () => {
+    canvas.addEventListener("mouseup", (event) => {
+        if (!isDraggingNode) {
+            // Handle node highlight if not dragging
+            const rect = canvas.getBoundingClientRect();
+            const x = (event.clientX - rect.left - offsetX) / scale;
+            const y = (event.clientY - rect.top - offsetY) / scale;
+
+            highlightedNode = null;
+            connectedNodes = [];
+            Object.keys(positions).forEach(node => {
+                const { x: nodeX, y: nodeY } = positions[node];
+                const distance = Math.sqrt((x - nodeX) ** 2 + (y - nodeY) ** 2);
+                if (distance <= 30) {
+                    highlightedNode = node;
+
+                    if (lastDependencyGraph[node]) {
+                        connectedNodes = [...lastDependencyGraph[node], node];
+                    } else {
+                        connectedNodes = [node];
+                        Object.keys(lastDependencyGraph).forEach(internalNode => {
+                            if (lastDependencyGraph[internalNode].includes(node)) {
+                                connectedNodes.push(internalNode);
+                            }
+                        });
+                    }
+                }
+            });
+            isCircularHighlightActive = false;
+            renderDependencyGraph(lastDependencyGraph);
+        }
+
         isPanning = false;
+        isDraggingNode = false;
+        draggedNode = null;
     });
 
     canvas.addEventListener("mouseleave", () => {
         isPanning = false;
+        isDraggingNode = false;
+        draggedNode = null;
     });
-
-    // Click-to-highlight functionality
-    canvas.addEventListener("click", (event) => {
-        const rect = canvas.getBoundingClientRect();
-        const x = (event.clientX - rect.left - offsetX) / scale;
-        const y = (event.clientY - rect.top - offsetY) / scale;
-
-        highlightedNode = null;
-        connectedNodes = [];
-        Object.keys(positions).forEach(node => {
-            const { x: nodeX, y: nodeY } = positions[node];
-            const distance = Math.sqrt((x - nodeX) ** 2 + (y - nodeY) ** 2);
-            if (distance <= 30) {
-                highlightedNode = node;
-
-                if (lastDependencyGraph[node]) {
-                    connectedNodes = [...lastDependencyGraph[node], node];
-                } else {
-                    connectedNodes = [node];
-                    Object.keys(lastDependencyGraph).forEach(internalNode => {
-                        if (lastDependencyGraph[internalNode].includes(node)) {
-                            connectedNodes.push(internalNode);
-                        }
-                    });
-                }
-            }
-        });
-
-        isCircularHighlightActive = false;
-        renderDependencyGraph(lastDependencyGraph);
-    });
-
-    // Draw arrowhead in the middle of the edge
-    function drawArrowhead(x1, y1, x2, y2) {
-        const arrowLength = 10;
-        const midX = (x1 + x2) / 2;
-        const midY = (y1 + y2) / 2;
-        const angle = Math.atan2(y2 - y1, x2 - x1);
-        const arrowX1 = midX - arrowLength * Math.cos(angle - Math.PI / 6);
-        const arrowY1 = midY - arrowLength * Math.sin(angle - Math.PI / 6);
-        const arrowX2 = midX - arrowLength * Math.cos(angle + Math.PI / 6);
-        const arrowY2 = midY - arrowLength * Math.sin(angle + Math.PI / 6);
-
-        context.beginPath();
-        context.moveTo(midX, midY);
-        context.lineTo(arrowX1, arrowY1);
-        context.lineTo(arrowX2, arrowY2);
-        context.lineTo(midX, midY);
-        context.fillStyle = context.strokeStyle;
-        context.fill();
-    }
 
     function renderDependencyGraph(dependencyGraph, isSearchHighlight = false) {
         context.clearRect(0, 0, canvas.width, canvas.height);
@@ -256,9 +266,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 context.moveTo(nodeX, nodeY);
                 context.lineTo(depX, depY);
                 context.stroke();
-
-                // Draw arrowhead in the middle of the edge to indicate direction
-                drawArrowhead(nodeX, nodeY, depX, depY);
             });
         });
     
@@ -294,6 +301,24 @@ document.addEventListener("DOMContentLoaded", () => {
     
         context.restore();
     }    
+
+    // Function to check if a node is at a given position
+    function getNodeAtPosition(x, y) {
+        return Object.keys(positions).find(node => {
+            const { x: nodeX, y: nodeY } = positions[node];
+            const distance = Math.sqrt((x - nodeX) ** 2 + (y - nodeY) ** 2);
+            return distance <= 30;
+        });
+    }
+
+    // Key event listeners to track spacebar state
+    document.addEventListener("keydown", (event) => {
+        if (event.code === "Space") isSpacebarPressed = true;
+    });
+
+    document.addEventListener("keyup", (event) => {
+        if (event.code === "Space") isSpacebarPressed = false;
+    });
 
     // Initialize Positions Function with Scale Support for Both Internal and External Nodes
     function initializePositions(dependencyGraph) {
