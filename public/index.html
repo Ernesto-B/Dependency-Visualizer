@@ -15,8 +15,8 @@
             <form id="analyzeForm">
                 <label for="folderPath">Folder Path:</label>
                 <input type="text" id="folderPath" placeholder="Enter folder path">
-                <button id="clearInputButton" type="button">Clear Input</button>
                 <button type="button" id="analyzeButton">Analyze</button>
+                <button id="clearInputButton" type="button">Clear Input</button>
             </form>
 
             <h2>Dependency Graph</h2>
@@ -29,48 +29,51 @@
         </div>
 
         <!-- Notification container on the right side of the main container -->
-        <div class="notification-container" id="notificationContainer">
-            <h3>Control Panel</h3>
-            
-            <!-- Search section -->
-            <div class="notification-section">
-                <label for="searchFile">Search File:</label>
-                <input type="text" id="searchFile" placeholder="/server.js">
-                <button id="searchButton">Search</button>
+        <div class="control-panel">
+            <div class="dropdown-section">
+                <div class="dropdown-header">Search File:</div>
+                <div class="dropdown-content">
+                    <input type="text" id="searchFile" placeholder="Enter file name...">
+                    <button id="searchButton">Search</button>
+                </div>
             </div>
-
-            <!-- Circular dependencies information -->
-            <div class="notification-section">
-                <h4>Circular Dependencies:</h4>
-                <p id="circularDependencies">Waiting for analysis...</p>
+        
+            <div class="dropdown-section">
+                <div class="dropdown-header">Circular Dependencies:</div>
+                <div class="dropdown-content" id="circularDependencies">
+                </div>
                 <button id="highlightCircularButton" style="display: none;">Highlight Circular Dependency</button>
             </div>
-
-            <!-- Key files information -->
-            <div class="notification-section">
-                <h4>Key Files:</h4>
-                <p id="keyFiles">Waiting for analysis...</p>
+        
+            <div class="dropdown-section">
+                <div class="dropdown-header">Key Files:</div>
+                <div class="dropdown-content" id="keyFiles">
+                    <!-- Key files will be listed here -->
+                </div>
             </div>
-
-            <!-- Total number of files -->
-            <div class="notification-section">
-                <h4>Number of Files:</h4>
-                <p id="numFiles">Waiting for analysis...</p>
+        
+            <div class="dropdown-section">
+                <div class="dropdown-header">Number of Files:</div>
+                <div class="dropdown-content" id="numFiles">
+                    <!-- Number of files will be shown here -->
+                </div>
             </div>
-
-            <div class="notification-section">
+        
+            <div class="dropdown-section">
                 <label for="impactToggle">
                     <input type="checkbox" id="impactToggle">
                     Show Dependency Impact Analysis
                 </label>
             </div>
 
-            <div class="notification-section">
-                <label for="scaleSlider">Graph Scale:</label>
-                <input type="range" id="scaleSlider" min="0.5" max="3" step="0.1" value="1">
+            <div class="dropdown-section">
+                <div class="dropdown-header">Graph Scale:</div>
+                <div class="dropdown-content">
+                    <input type="range" id="scaleSlider" min="0.5" max="2" step="0.1" value="1">
+                </div>
             </div>
-
         </div>
+        
     </div>
 
     <script src="script.js" type="module"></script>

@@ -48,6 +48,11 @@ document.addEventListener("DOMContentLoaded", () => {
         impactScores = {};
     }
 
+        // Make all dropdown sections open by default
+        document.querySelectorAll('.dropdown-section').forEach(section => {
+            section.classList.add('open');
+        });
+
     // Analyze button click
     analyzeButton.addEventListener('click', async () => {
         resetGraphData();
