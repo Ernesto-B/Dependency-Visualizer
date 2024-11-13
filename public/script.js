@@ -442,3 +442,39 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 });
+
+document.addEventListener("DOMContentLoaded", () => {
+    const darkModeToggle = document.getElementById("darkModeToggle");
+
+    // Check for saved theme preference
+    const isDarkMode = localStorage.getItem("darkMode") === "enabled";
+    if (isDarkMode) {
+        document.body.classList.add("dark-mode");
+        darkModeToggle.checked = true;
+        setCanvasBackground("dark");
+    } else {
+        setCanvasBackground("light");
+    }
+
+    // Toggle dark mode on checkbox change
+    darkModeToggle.addEventListener("change", (event) => {
+        if (event.target.checked) {
+            document.body.classList.add("dark-mode");
+            localStorage.setItem("darkMode", "enabled");
+            setCanvasBackground("dark");
+        } else {
+            document.body.classList.remove("dark-mode");
+            localStorage.setItem("darkMode", "disabled");
+            setCanvasBackground("light");
+        }
+    });
+
+    function setCanvasBackground(mode) {
+        const canvas = document.getElementById("dependencyCanvas");
+        if (mode === "dark") {
+            canvas.style.backgroundColor = "#bbbbbb"; // Grey background for dark mode
+        } else {
+            canvas.style.backgroundColor = "#ffffff"; // White background for light mode
+        }
+    }
+});

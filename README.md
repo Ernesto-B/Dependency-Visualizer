@@ -58,9 +58,8 @@ A tool to analyze and visualize dependencies within a specified project folder. 
 - [ ] Simple animation to show highest impact file.
 - [ ] Help/info section explaining features and other important bits (node_modules auto skipped).
 - [x] Clear input field button for root folder path input.
-- [ ] Dark mode.
+- [x] Dark mode.
 - [ ] Highlight critical paths in the dependency graph (long chains of dependencies that have high impact) to help identify bottlenecks or areas where a single file’s change could cascade across multiple layers.
 Use different colors or bold lines to indicate files on the critical path... they may require additional testing or attention during development.
 - [x] Count number of external dependencies for the root folder.
-- [ ] Fullscreen graph mode.
 - [ ] Docker containerization (to be able to run the tool without having to first start the server, then open the HTML file).

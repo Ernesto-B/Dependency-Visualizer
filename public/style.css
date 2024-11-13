@@ -154,3 +154,53 @@ button:hover {
 .dropdown-section.open .dropdown-header::after {
     transform: rotate(180deg); /* Rotate arrow to point up when open */
 }
+
+
+/* ------------------------------------------------ */
+
+/* Dark Mode Styles */
+body.dark-mode {
+    background-color: #121212;
+    color: #e0e0e0;
+}
+
+body.dark-mode .container,
+body.dark-mode .control-panel {
+    background-color: #1e1e1e;
+    border-color: #333;
+    color: #e0e0e0;
+}
+
+body.dark-mode h1,
+body.dark-mode h2 {
+    color: #ffffff;
+}
+
+body.dark-mode #jsonView {
+    background-color: #2a2a2a;
+    color: #e0e0e0;
+    border-color: #444;
+}
+
+body.dark-mode #dependencyCanvas {
+    border-color: #444;
+}
+
+/* Button styles in dark mode */
+body.dark-mode button {
+    background-color: #333;
+    color: #e0e0e0;
+}
+
+body.dark-mode button:hover {
+    background-color: #555;
+}
+
+/* Control panel dropdown headers and content */
+body.dark-mode .dropdown-header {
+    color: #ff6b6b;
+}
+
+body.dark-mode .dropdown-section {
+    border-color: #444;
+}
