@@ -48,11 +48,11 @@ A tool to analyze and visualize dependencies within a specified project folder. 
 - [x] Circular dependency detection.
 - [x] Improve graph layout and styling.
 - [x] Add search functionality to find specific nodes.
-- [ ] Add functionality to export the graph as an image.
+- [x] Add functionality to export the graph as an image.
 - [ ] Field for folders to exclude from analysis.
 - [x] Moving nodes by click + drag.
 - [x] Displaying key files all in new lines.
-- [ ] Displaying circular dependency files all in new lines.
+- [x] Displaying circular dependency files all in new lines.
 - [x] Making each of the control panel's "sections" be a dropdown to be able to hide unwanted controls.
 - [ ] Visualization of Dependency Chains: For files with high impact, show the chain of dependencies they influence (e.g., file A → file B → file C), allowing users to trace the flow of impact.
 - [ ] Simple animation to show highest impact file.
