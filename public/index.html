@@ -9,6 +9,39 @@
 </head>
 
 <body>
+    <!-- Help Icon -->
+    <div id="helpIcon" title="Help">?</div>
+
+    <!-- Help Panel -->
+    <div id="helpPanel">
+        <h3>Using the Dependency Visualizer</h3>
+        <ul>
+            <li><strong>Folder Path:</strong> Enter the path of the folder containing the files you want to analyze,
+                then click <em>Analyze/Reset</em> to generate the dependency graph. Here is an example valid folder:
+                C:\Users\user\OneDrive\Project1</li><br>
+            <li><strong>Search File:</strong> Enter a file name to highlight its dependencies and connections in the
+                graph.</li><br>
+            <li><strong>Key Files:</strong> Are files with the highest number of direct connections (both incoming and
+                outgoing dependencies). They are often act as central nodes in the dependency graph, meaning they
+                connect to many other files.</li><br>
+            <li><strong>Graph Settings:</strong> Use the scale slider to zoom in or out on the graph. If a node was moved by the user, it will not be affected by the scale. Toggle <em>Show Dependency Impact</em> to see impact scores if available.</li><br>
+            <li><strong>Dependency Impact:</strong> Files with high dependency are files that when modified, can indirectly affect a large number of other files, even if those files are not directly dependent on them. In other words, if changing a particular file would likely require changes or testing in many other parts of the project, it has a high dependency impact. This score is calculated by recursively counting dependencies across multiple levels of connections (i.e., files that depend on files that depend on the target file).</li><br>
+            <li><strong>Graph Color Codes:</strong><ul>
+                <li>Blue: A file</li>
+                <li>Red: An external library (could also be a file outside of the root folder)</li>
+                <li>Purple: A file involved in a circular dependency</li>
+            </ul>
+            </li><br>
+            <li><strong>Graph Controls</strong><ul>
+                <li>Click-and-drag to pan the camera inside the graph</li>
+                <li>Click on a blue or purple node to show its direct imports. Click on a red node to view while file imports it</li>
+                <li>Scroll wheel up or down while the cursor is in the graph to zoom in or out</li>
+                <li>Space + click-and-drag a node to move the node</li>
+            </ul>
+            </li><br>
+        </ul>
+    </div>
+
     <!-- Wrapper div to hold the main container and the notifications panel -->
     <div class="wrapper">
         <!-- Main content container -->
@@ -21,7 +54,6 @@
                 <button id="clearInputButton" type="button">Clear Input</button>
             </form>
 
-            <h2>Dependency Graph</h2>
             <p>
                 Click on a node to see its connections. Works for: C, C++, Java,
                 Python, JS, TS, Go
@@ -48,7 +80,7 @@
             <div class="dropdown-section">
                 <div class="dropdown-header">Circular Dependencies:</div>
                 <div class="dropdown-content" id="circularDependencies"></div>
-            </div>                    
+            </div>
 
             <div class="dropdown-section">
                 <div class="dropdown-header">Key Files:</div>
@@ -87,7 +119,7 @@
                     </label>
                 </div>
             </div>
-            
+
         </div>
     </div>
 

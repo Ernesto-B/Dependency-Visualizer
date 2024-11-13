@@ -504,3 +504,14 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 });
+
+document.addEventListener("DOMContentLoaded", () => {
+    const helpIcon = document.getElementById("helpIcon");
+    const helpPanel = document.getElementById("helpPanel");
+
+    // Toggle the help panel and help icon visibility
+    helpIcon.addEventListener("click", () => {
+        helpPanel.classList.toggle("show");
+        helpIcon.classList.toggle("show"); // Move icon with the panel
+    });
+});

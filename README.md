@@ -56,7 +56,7 @@ A tool to analyze and visualize dependencies within a specified project folder. 
 - [x] Making each of the control panel's "sections" be a dropdown to be able to hide unwanted controls.
 - [ ] Visualization of Dependency Chains: For files with high impact, show the chain of dependencies they influence (e.g., file A → file B → file C), allowing users to trace the flow of impact.
 - [ ] Simple animation to show highest impact file.
-- [ ] Help/info section explaining features and other important bits (node_modules auto skipped).
+- [x] Help/info section explaining features and other important bits (node_modules auto skipped).
 - [x] Clear input field button for root folder path input.
 - [x] Dark mode.
 - [ ] Highlight critical paths in the dependency graph (long chains of dependencies that have high impact) to help identify bottlenecks or areas where a single file’s change could cascade across multiple layers.
