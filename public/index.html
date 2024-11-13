@@ -16,14 +16,9 @@
     <div id="helpPanel">
         <h3>Using the Dependency Visualizer</h3>
         <ul>
-            <li><strong>Folder Path:</strong> Enter the path of the folder containing the files you want to analyze,
-                then click <em>Analyze/Reset</em> to generate the dependency graph. Here is an example valid folder:
-                C:\Users\user\OneDrive\Project1</li><br>
-            <li><strong>Search File:</strong> Enter a file name to highlight its dependencies and connections in the
-                graph.</li><br>
-            <li><strong>Key Files:</strong> Are files with the highest number of direct connections (both incoming and
-                outgoing dependencies). They are often act as central nodes in the dependency graph, meaning they
-                connect to many other files.</li><br>
+            <li><strong>Folder Path:</strong> Enter the path of the folder containing the files you want to analyze, then click <em>Analyze/Reset</em> to generate the dependency graph. Here is an example valid folder: C:\Users\user\OneDrive\Project1</li><br>
+            <li><strong>Search File:</strong> Enter a file name to highlight its dependencies and connections in the graph.</li><br>
+            <li><strong>Key Files:</strong> Are files with the highest number of direct connections (both incoming and outgoing dependencies). They are often act as central nodes in the dependency graph, meaning they connect to many other files.</li><br>
             <li><strong>Graph Settings:</strong> Use the scale slider to zoom in or out on the graph. If a node was moved by the user, it will not be affected by the scale. Toggle <em>Show Dependency Impact</em> to see impact scores if available.</li><br>
             <li><strong>Dependency Impact:</strong> Files with high dependency are files that when modified, can indirectly affect a large number of other files, even if those files are not directly dependent on them. In other words, if changing a particular file would likely require changes or testing in many other parts of the project, it has a high dependency impact. This score is calculated by recursively counting dependencies across multiple levels of connections (i.e., files that depend on files that depend on the target file).</li><br>
             <li><strong>Graph Color Codes:</strong><ul>
@@ -60,9 +55,7 @@
             </p>
 
             <div class="graph-container">
-                <div id="jsonView">
-                    Dependency graph JSON data will appear here when available.
-                </div>
+                <div id="jsonView">Dependency graph JSON data will appear here when available.</div>
                 <canvas id="dependencyCanvas" width="600" height="600"></canvas>
             </div>
         </div>
