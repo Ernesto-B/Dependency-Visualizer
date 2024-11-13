@@ -54,78 +54,79 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // Analyze button click
-analyzeButton.addEventListener('click', async () => {
-    resetGraphData();
+    analyzeButton.addEventListener('click', async () => {
+        resetGraphData();
 
-    // Reset circular dependencies header text
-    const circularDependenciesHeader = document.querySelector('.dropdown-section:nth-of-type(2) .dropdown-header');
-    if (circularDependenciesHeader) {
-        circularDependenciesHeader.textContent = "Circular Dependencies:"; // Reset the header text
-    }
-
-    const folderPath = folderPathInput.value;
-    if (!folderPath) {
-        alert("Please provide the root folder path.");
-        return;
-    }
-    try {
-        const response = await fetch('http://localhost:3000/analyze', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ folderPath })
-        });
-        if (!response.ok) {
-            throw new Error("Failed to connect to the server.");
-        }
-        const result = await response.json();
-        lastDependencyGraph = result.dependencyGraph;
-        renderDependencyGraph(lastDependencyGraph);
-
-        // Display JSON
-        jsonView.textContent = JSON.stringify(lastDependencyGraph, null, 2);
-
-        // Circular dependencies information
-        if (result.hasCycles && result.cycleNodes.length > 0) {
-            circularDependencies = result.cycleNodes || [];
-            circularDependenciesText.innerHTML = circularDependencies.map(file => `<div>${file}</div>`).join('');
-
-            // Update Circular Dependencies header with the count
-            circularDependenciesHeader.textContent = `Circular Dependencies (${circularDependencies.length})`;
-
-            isCircularHighlightActive = true; // Automatically highlight circular dependencies
-            renderDependencyGraph(lastDependencyGraph); // Refresh the graph with highlights
-        } else {
-            circularDependenciesText.innerHTML = "<div>No circular dependencies detected.</div>";
-            circularDependenciesHeader.textContent = "Circular Dependencies:"; // Remove count if no cycles
-            isCircularHighlightActive = false;
+        // Reset circular dependencies header text
+        const circularDependenciesHeader = document.querySelector('.dropdown-section:nth-of-type(2) .dropdown-header');
+        if (circularDependenciesHeader) {
+            circularDependenciesHeader.textContent = "Circular Dependencies:"; // Reset the header text
         }
 
-        // Key files
-        const fileConnections = Object.keys(lastDependencyGraph).reduce((acc, file) => {
-            const connections = lastDependencyGraph[file].length;
-            acc[file] = connections;
-            lastDependencyGraph[file].forEach(dep => {
-                acc[dep] = (acc[dep] || 0) + 1;
+        const folderPath = folderPathInput.value;
+        if (!folderPath) {
+            alert("Please provide the root folder path.");
+            return;
+        }
+        try {
+            const response = await fetch('http://localhost:3000/analyze', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ folderPath })
             });
-            return acc;
-        }, {});
+            if (!response.ok) {
+                throw new Error("Failed to connect to the server.");
+            }
+            const result = await response.json();
+            lastDependencyGraph = result.dependencyGraph;
+            renderDependencyGraph(lastDependencyGraph);
 
-        const maxConnections = Math.max(...Object.values(fileConnections));
-        keyFiles = Object.keys(fileConnections).filter(file => fileConnections[file] === maxConnections);
-        keyFilesText.textContent = keyFiles.join(', ');
+            // Display JSON
+            jsonView.textContent = JSON.stringify(lastDependencyGraph, null, 2);
 
-        // Number of files
-        numFilesText.textContent = Object.keys(lastDependencyGraph).length;
+            // Circular dependencies information
+            if (result.hasCycles && result.cycleNodes.length > 0) {
+                circularDependencies = result.cycleNodes || [];
+                circularDependenciesText.innerHTML = circularDependencies.map(file => `<div>${file}</div>`).join('');
 
-        // Calculate impact scores
-        impactScores = calculateImpactScores(lastDependencyGraph);
+                // Update Circular Dependencies header with the count
+                circularDependenciesHeader.textContent = `Circular Dependencies (${circularDependencies.length})`;
 
-    } catch (error) {
-        alert(error.message);
-    }
-});
+                isCircularHighlightActive = true; // Automatically highlight circular dependencies
+                renderDependencyGraph(lastDependencyGraph); // Refresh the graph with highlights
+            } else {
+                circularDependenciesText.innerHTML = "<div>No circular dependencies detected.</div>";
+                circularDependenciesHeader.textContent = "Circular Dependencies:"; // Remove count if no cycles
+                isCircularHighlightActive = false;
+            }
+
+            // Key files
+            const fileConnections = Object.keys(lastDependencyGraph).reduce((acc, file) => {
+                const connections = lastDependencyGraph[file].length;
+                acc[file] = connections;
+                lastDependencyGraph[file].forEach(dep => {
+                    acc[dep] = (acc[dep] || 0) + 1;
+                });
+                return acc;
+            }, {});
+
+            const maxConnections = Math.max(...Object.values(fileConnections));
+            keyFiles = Object.keys(fileConnections).filter(file => fileConnections[file] === maxConnections);
+            keyFilesText.innerHTML = keyFiles.map(file => `<div>${file}</div>`).join(''); // Display each key file on a new line
+
+
+            // Number of files
+            numFilesText.textContent = Object.keys(lastDependencyGraph).length;
+
+            // Calculate impact scores
+            impactScores = calculateImpactScores(lastDependencyGraph);
+
+        } catch (error) {
+            alert(error.message);
+        }
+    });
 
 
 
@@ -252,41 +253,36 @@ analyzeButton.addEventListener('click', async () => {
         context.save();
         context.translate(offsetX, offsetY);
         context.scale(scale, scale);
-
+    
         const nodes = Object.keys(dependencyGraph);
         const nodeRadius = 30;
-
+    
         if (Object.keys(positions).length === 0) {
             initializePositions(dependencyGraph);
         }
-
-        // Draw edges with conditional highlighting for direct connections only
+    
+        // Draw edges
         nodes.forEach((node) => {
             const { x: nodeX, y: nodeY } = positions[node];
             dependencyGraph[node].forEach((dep) => {
-                if (!positions[dep]) return; // Skip if dep position is undefined
-
+                if (!positions[dep]) return;
+    
                 const { x: depX, y: depY } = positions[dep];
-
-                // Highlight edge only if the edge is between the highlightedNode and its direct dependencies
                 const isDirectlyConnectedEdge = (node === highlightedNode && connectedNodes.includes(dep)) ||
-                    (dep === highlightedNode && connectedNodes.includes(node));
+                                                (dep === highlightedNode && connectedNodes.includes(node));
                 context.strokeStyle = isDirectlyConnectedEdge ? "#f39c12" : "#ccc";
                 context.lineWidth = isDirectlyConnectedEdge ? 2 : 1.5;
-
+    
                 context.beginPath();
                 context.moveTo(nodeX, nodeY);
                 context.lineTo(depX, depY);
                 context.stroke();
-
-                // Add arrow in the middle of the edge
-                const arrowLength = 10; // Length of the arrowhead
+    
+                const arrowLength = 10;
                 const angle = Math.atan2(depY - nodeY, depX - nodeX);
-
-                // Calculate the position for the arrow
                 const arrowX = (nodeX + depX) / 2;
                 const arrowY = (nodeY + depY) / 2;
-
+    
                 context.beginPath();
                 context.moveTo(arrowX, arrowY);
                 context.lineTo(
@@ -301,43 +297,57 @@ analyzeButton.addEventListener('click', async () => {
                 context.stroke();
             });
         });
-
-        // Draw nodes with impact analysis if enabled and with permanent highlight for circular dependencies
+    
+        // Draw nodes with colors for impact, highlights, and circular dependencies
         nodes.concat(Object.keys(positions).filter(node => !nodes.includes(node))).forEach((node) => {
             const { x, y } = positions[node];
             const isHighlighted = (highlightedNode === node) || connectedNodes.includes(node);
-            const isCircularNode = circularDependencies.includes(node); // Always check if node is circular
-
+            const isCircularNode = circularDependencies.includes(node);
+    
             context.beginPath();
             context.arc(x, y, nodeRadius, 0, Math.PI * 2, false);
-
-            // Set fill color based on conditions
-            context.fillStyle = isCircularNode ? "#D8BFD8" // Light purple for circular dependency
-                : isHighlighted ? (isSearchHighlight && node === highlightedNode ? "red" : "#f39c12") // Red for searched node, yellow for other highlights
-                    : (nodes.includes(node) ? "#61bffc" : "#ff9999"); // Blue for internal nodes, red for external nodes
-            if (showImpactAnalysis && impactScores[node]) {
-                context.fillStyle = getImpactColor(impactScores[node]);
+    
+            // Set node fill color based on its state
+            if (isCircularNode) {
+                context.fillStyle = "#D8BFD8";  // Permanently purple for circular dependencies
+            } else if (highlightedNode && isHighlighted) {
+                context.fillStyle = "#f39c12";  // Yellow for highlighted nodes when a non-circular node is clicked
+            } else if (showImpactAnalysis && impactScores[node]) {
+                context.fillStyle = getImpactColor(impactScores[node]); // Use impact color if analysis is on
+            } else {
+                context.fillStyle = nodes.includes(node) ? "#61bffc" : "#ff9999"; // Blue for internal nodes, red for external nodes
             }
+    
             context.fill();
-
-            // Set border color based on highlight and circular dependency status
-            context.lineWidth = 2;
-            context.strokeStyle = isHighlighted && isCircularNode ? "#f39c12" : "#333"; // Yellow border for highlighted circular nodes, black for others
+    
+            // Set the border color based on the state of the node
+            if (highlightedNode === node) {
+                context.lineWidth = 3;
+                context.strokeStyle = "red"; // Red border for the clicked node
+            } else if (isHighlighted && isCircularNode) {
+                context.lineWidth = 2;
+                context.strokeStyle = "#f39c12"; // Yellow border for highlighted circular dependencies
+            } else {
+                context.lineWidth = 2;
+                context.strokeStyle = "#333"; // Black border for all other nodes
+            }
+    
             context.stroke();
-
+    
             context.font = "12px Arial";
             context.fillStyle = "#000";
             context.textAlign = "center";
             context.fillText(node, x, y + 4);
-
-            // Show impact score if impact analysis is enabled
+    
+            // Display impact score if impact analysis is enabled
             if (showImpactAnalysis && impactScores[node]) {
                 context.fillText(`Score: ${impactScores[node]}`, x, y + 20);
             }
         });
-
+    
         context.restore();
     }
+    
 
     // Function to check if a node is at a given position
     function getNodeAtPosition(x, y) {
