@@ -9,7 +9,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const searchFileInput = document.getElementById('searchFile');
     const searchButton = document.getElementById('searchButton');
     const circularDependenciesText = document.getElementById('circularDependencies');
-    const highlightCircularButton = document.getElementById('highlightCircularButton');
     const keyFilesText = document.getElementById('keyFiles');
     const numFilesText = document.getElementById('numFiles');
     const impactToggle = document.getElementById('impactToggle');
@@ -48,10 +47,10 @@ document.addEventListener("DOMContentLoaded", () => {
         impactScores = {};
     }
 
-        // Make all dropdown sections open by default
-        document.querySelectorAll('.dropdown-section').forEach(section => {
-            section.classList.add('open');
-        });
+    // Make all dropdown sections open by default
+    document.querySelectorAll('.dropdown-section').forEach(section => {
+        section.classList.add('open');
+    });
 
     // Analyze button click
     analyzeButton.addEventListener('click', async () => {
@@ -83,10 +82,11 @@ document.addEventListener("DOMContentLoaded", () => {
             if (result.hasCycles) {
                 circularDependencies = result.cycleNodes || [];
                 circularDependenciesText.textContent = `True: ${circularDependencies.join(', ')}`;
-                highlightCircularButton.style.display = 'inline';
+                isCircularHighlightActive = true; // Automatically highlight circular dependencies
+                renderDependencyGraph(lastDependencyGraph); // Refresh the graph with highlights
             } else {
                 circularDependenciesText.textContent = "False";
-                highlightCircularButton.style.display = 'none';
+                isCircularHighlightActive = false;
             }
 
             // Key files
@@ -123,18 +123,6 @@ document.addEventListener("DOMContentLoaded", () => {
             renderDependencyGraph(lastDependencyGraph, true);
         } else {
             alert("File not found in the dependency graph.");
-        }
-    });
-
-    // Highlight circular dependencies
-    highlightCircularButton.addEventListener('click', () => {
-        if (circularDependencies.length > 0) {
-            highlightedNode = null;
-            connectedNodes = circularDependencies;
-            isCircularHighlightActive = true;
-            renderDependencyGraph(lastDependencyGraph);
-        } else {
-            alert("No circular dependencies found.");
         }
     });
 
@@ -254,47 +242,42 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     
         // Draw edges with conditional highlighting for direct connections only
-nodes.forEach((node) => {
-    const { x: nodeX, y: nodeY } = positions[node];
-    dependencyGraph[node].forEach((dep) => {
-        if (!positions[dep]) return; // Skip if dep position is undefined
-
-        const { x: depX, y: depY } = positions[dep];
-        
-        // Highlight edge only if the edge is between the highlightedNode and its direct dependencies
-        const isDirectlyConnectedEdge = (node === highlightedNode && connectedNodes.includes(dep)) ||
-                                        (dep === highlightedNode && connectedNodes.includes(node));
-        context.strokeStyle = isDirectlyConnectedEdge ? "#f39c12" : "#ccc";
-        context.lineWidth = isDirectlyConnectedEdge ? 2 : 1.5;
-
-        context.beginPath();
-        context.moveTo(nodeX, nodeY);
-        context.lineTo(depX, depY);
-        context.stroke();
-
-        // Add arrow in the middle of the edge
-        const arrowLength = 10; // Length of the arrowhead
-        const angle = Math.atan2(depY - nodeY, depX - nodeX);
-
-        // Calculate the position for the arrow
-        const arrowX = (nodeX + depX) / 2;
-        const arrowY = (nodeY + depY) / 2;
-
-        context.beginPath();
-        context.moveTo(arrowX, arrowY);
-        context.lineTo(
-            arrowX - arrowLength * Math.cos(angle - Math.PI / 6),
-            arrowY - arrowLength * Math.sin(angle - Math.PI / 6)
-        );
-        context.moveTo(arrowX, arrowY);
-        context.lineTo(
-            arrowX - arrowLength * Math.cos(angle + Math.PI / 6),
-            arrowY - arrowLength * Math.sin(angle + Math.PI / 6)
-        );
-        context.stroke();
-    });
-});
-
+        nodes.forEach((node) => {
+            const { x: nodeX, y: nodeY } = positions[node];
+            dependencyGraph[node].forEach((dep) => {
+                if (!positions[dep]) return; // Skip if dep position is undefined
+    
+                const { x: depX, y: depY } = positions[dep];
+                const isDirectlyConnectedEdge = (node === highlightedNode && connectedNodes.includes(dep)) ||
+                                                (dep === highlightedNode && connectedNodes.includes(node));
+                context.strokeStyle = isDirectlyConnectedEdge ? "#f39c12" : "#ccc";
+                context.lineWidth = isDirectlyConnectedEdge ? 2 : 1.5;
+    
+                context.beginPath();
+                context.moveTo(nodeX, nodeY);
+                context.lineTo(depX, depY);
+                context.stroke();
+    
+                // Add arrow in the middle of the edge
+                const arrowLength = 10; // Length of the arrowhead
+                const angle = Math.atan2(depY - nodeY, depX - nodeX);
+                const arrowX = (nodeX + depX) / 2;
+                const arrowY = (nodeY + depY) / 2;
+    
+                context.beginPath();
+                context.moveTo(arrowX, arrowY);
+                context.lineTo(
+                    arrowX - arrowLength * Math.cos(angle - Math.PI / 6),
+                    arrowY - arrowLength * Math.sin(angle - Math.PI / 6)
+                );
+                context.moveTo(arrowX, arrowY);
+                context.lineTo(
+                    arrowX - arrowLength * Math.cos(angle + Math.PI / 6),
+                    arrowY - arrowLength * Math.sin(angle + Math.PI / 6)
+                );
+                context.stroke();
+            });
+        });
     
         // Draw nodes with impact analysis if enabled
         nodes.concat(Object.keys(positions).filter(node => !nodes.includes(node))).forEach((node) => {
@@ -327,7 +310,8 @@ nodes.forEach((node) => {
         });
     
         context.restore();
-    }    
+    }
+    
 
     // Function to check if a node is at a given position
     function getNodeAtPosition(x, y) {
@@ -394,8 +378,17 @@ nodes.forEach((node) => {
 document.addEventListener("DOMContentLoaded", () => {
     const folderPathInput = document.getElementById('folderPath');
     const clearInputButton = document.getElementById('clearInputButton');
-    
+
     clearInputButton.addEventListener('click', () => {
         folderPathInput.value = "";
+    });
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+    // Toggle dropdown sections
+    document.querySelectorAll('.dropdown-header').forEach(header => {
+        header.addEventListener('click', () => {
+            header.parentElement.classList.toggle('open');
+        });
     });
 });

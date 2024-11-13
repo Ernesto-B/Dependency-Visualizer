@@ -53,7 +53,7 @@ A tool to analyze and visualize dependencies within a specified project folder. 
 - [x] Moving nodes by click + drag.
 - [ ] Displaying key files all in new lines.
 - [ ] Displaying circular dependency files all in new lines.
-- [ ] Making each of the control panel's "sections" be a dropdown to be able to hide unwanted controls.
+- [x] Making each of the control panel's "sections" be a dropdown to be able to hide unwanted controls.
 - [ ] Visualization of Dependency Chains: For files with high impact, show the chain of dependencies they influence (e.g., file A → file B → file C), allowing users to trace the flow of impact.
 - [ ] Simple animation to show highest impact file.
 - [ ] Help/info section explaining features and other important bits (node_modules auto skipped).
