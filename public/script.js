@@ -45,7 +45,7 @@ document.addEventListener("DOMContentLoaded", () => {
         offsetY = 0;
         isCircularHighlightActive = false;
         impactScores = {};
-        movedNodes.clear(); 
+        movedNodes.clear();
     }
 
     // Make all dropdown sections open by default
@@ -54,71 +54,79 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // Analyze button click
-    analyzeButton.addEventListener('click', async () => {
-        resetGraphData();
-        const folderPath = folderPathInput.value;
-        if (!folderPath) {
-            alert("Please provide the root folder path.");
-            return;
+analyzeButton.addEventListener('click', async () => {
+    resetGraphData();
+
+    // Reset circular dependencies header text
+    const circularDependenciesHeader = document.querySelector('.dropdown-section:nth-of-type(2) .dropdown-header');
+    if (circularDependenciesHeader) {
+        circularDependenciesHeader.textContent = "Circular Dependencies:"; // Reset the header text
+    }
+
+    const folderPath = folderPathInput.value;
+    if (!folderPath) {
+        alert("Please provide the root folder path.");
+        return;
+    }
+    try {
+        const response = await fetch('http://localhost:3000/analyze', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ folderPath })
+        });
+        if (!response.ok) {
+            throw new Error("Failed to connect to the server.");
         }
-        try {
-            const response = await fetch('http://localhost:3000/analyze', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ folderPath })
+        const result = await response.json();
+        lastDependencyGraph = result.dependencyGraph;
+        renderDependencyGraph(lastDependencyGraph);
+
+        // Display JSON
+        jsonView.textContent = JSON.stringify(lastDependencyGraph, null, 2);
+
+        // Circular dependencies information
+        if (result.hasCycles && result.cycleNodes.length > 0) {
+            circularDependencies = result.cycleNodes || [];
+            circularDependenciesText.innerHTML = circularDependencies.map(file => `<div>${file}</div>`).join('');
+
+            // Update Circular Dependencies header with the count
+            circularDependenciesHeader.textContent = `Circular Dependencies (${circularDependencies.length})`;
+
+            isCircularHighlightActive = true; // Automatically highlight circular dependencies
+            renderDependencyGraph(lastDependencyGraph); // Refresh the graph with highlights
+        } else {
+            circularDependenciesText.innerHTML = "<div>No circular dependencies detected.</div>";
+            circularDependenciesHeader.textContent = "Circular Dependencies:"; // Remove count if no cycles
+            isCircularHighlightActive = false;
+        }
+
+        // Key files
+        const fileConnections = Object.keys(lastDependencyGraph).reduce((acc, file) => {
+            const connections = lastDependencyGraph[file].length;
+            acc[file] = connections;
+            lastDependencyGraph[file].forEach(dep => {
+                acc[dep] = (acc[dep] || 0) + 1;
             });
-            if (!response.ok) {
-                throw new Error("Failed to connect to the server.");
-            }
-            const result = await response.json();
-            lastDependencyGraph = result.dependencyGraph;
-            renderDependencyGraph(lastDependencyGraph);
+            return acc;
+        }, {});
 
-            // Display JSON
-            jsonView.textContent = JSON.stringify(lastDependencyGraph, null, 2);
+        const maxConnections = Math.max(...Object.values(fileConnections));
+        keyFiles = Object.keys(fileConnections).filter(file => fileConnections[file] === maxConnections);
+        keyFilesText.textContent = keyFiles.join(', ');
 
-            // Circular dependencies information
-            if (result.hasCycles) {
-                circularDependencies = result.cycleNodes || [];
-                circularDependenciesText.innerHTML = circularDependencies.map(file => `<div>${file}</div>`).join('');
+        // Number of files
+        numFilesText.textContent = Object.keys(lastDependencyGraph).length;
 
-                // Update the correct Circular Dependencies header with the count
-                const circularDependenciesHeader = document.querySelector('.dropdown-section:nth-of-type(2) .dropdown-header');
-                circularDependenciesHeader.textContent = `Circular Dependencies (${circularDependencies.length})`;
+        // Calculate impact scores
+        impactScores = calculateImpactScores(lastDependencyGraph);
 
-                isCircularHighlightActive = true; // Automatically highlight circular dependencies
-                renderDependencyGraph(lastDependencyGraph); // Refresh the graph with highlights
-            } else {
-                circularDependenciesText.innerHTML = "<div>No circular dependencies detected.</div>";
-                isCircularHighlightActive = false;
-            }
+    } catch (error) {
+        alert(error.message);
+    }
+});
 
-            // Key files
-            const fileConnections = Object.keys(lastDependencyGraph).reduce((acc, file) => {
-                const connections = lastDependencyGraph[file].length;
-                acc[file] = connections;
-                lastDependencyGraph[file].forEach(dep => {
-                    acc[dep] = (acc[dep] || 0) + 1;
-                });
-                return acc;
-            }, {});
-
-            const maxConnections = Math.max(...Object.values(fileConnections));
-            keyFiles = Object.keys(fileConnections).filter(file => fileConnections[file] === maxConnections);
-            keyFilesText.textContent = keyFiles.join(', ');
-
-            // Number of files
-            numFilesText.textContent = Object.keys(lastDependencyGraph).length;
-
-            // Calculate impact scores
-            impactScores = calculateImpactScores(lastDependencyGraph);
-
-        } catch (error) {
-            alert(error.message);
-        }
-    });
 
 
     // Search button click
