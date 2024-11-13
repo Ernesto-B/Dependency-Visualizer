@@ -81,11 +81,16 @@ document.addEventListener("DOMContentLoaded", () => {
             // Circular dependencies information
             if (result.hasCycles) {
                 circularDependencies = result.cycleNodes || [];
-                circularDependenciesText.textContent = `True: ${circularDependencies.join(', ')}`;
+                circularDependenciesText.innerHTML = circularDependencies.map(file => `<div>${file}</div>`).join('');
+
+                // Update the correct Circular Dependencies header with the count
+                const circularDependenciesHeader = document.querySelector('.dropdown-section:nth-of-type(2) .dropdown-header');
+                circularDependenciesHeader.textContent = `Circular Dependencies (${circularDependencies.length})`;
+
                 isCircularHighlightActive = true; // Automatically highlight circular dependencies
                 renderDependencyGraph(lastDependencyGraph); // Refresh the graph with highlights
             } else {
-                circularDependenciesText.textContent = "False";
+                circularDependenciesText.innerHTML = "<div>No circular dependencies detected.</div>";
                 isCircularHighlightActive = false;
             }
 
@@ -113,6 +118,7 @@ document.addEventListener("DOMContentLoaded", () => {
             alert(error.message);
         }
     });
+
 
     // Search button click
     searchButton.addEventListener('click', () => {
@@ -233,37 +239,41 @@ document.addEventListener("DOMContentLoaded", () => {
         context.save();
         context.translate(offsetX, offsetY);
         context.scale(scale, scale);
-    
+
         const nodes = Object.keys(dependencyGraph);
         const nodeRadius = 30;
-    
+
         if (Object.keys(positions).length === 0) {
             initializePositions(dependencyGraph);
         }
-    
+
         // Draw edges with conditional highlighting for direct connections only
         nodes.forEach((node) => {
             const { x: nodeX, y: nodeY } = positions[node];
             dependencyGraph[node].forEach((dep) => {
                 if (!positions[dep]) return; // Skip if dep position is undefined
-    
+
                 const { x: depX, y: depY } = positions[dep];
+
+                // Highlight edge only if the edge is between the highlightedNode and its direct dependencies
                 const isDirectlyConnectedEdge = (node === highlightedNode && connectedNodes.includes(dep)) ||
-                                                (dep === highlightedNode && connectedNodes.includes(node));
+                    (dep === highlightedNode && connectedNodes.includes(node));
                 context.strokeStyle = isDirectlyConnectedEdge ? "#f39c12" : "#ccc";
                 context.lineWidth = isDirectlyConnectedEdge ? 2 : 1.5;
-    
+
                 context.beginPath();
                 context.moveTo(nodeX, nodeY);
                 context.lineTo(depX, depY);
                 context.stroke();
-    
+
                 // Add arrow in the middle of the edge
                 const arrowLength = 10; // Length of the arrowhead
                 const angle = Math.atan2(depY - nodeY, depX - nodeX);
+
+                // Calculate the position for the arrow
                 const arrowX = (nodeX + depX) / 2;
                 const arrowY = (nodeY + depY) / 2;
-    
+
                 context.beginPath();
                 context.moveTo(arrowX, arrowY);
                 context.lineTo(
@@ -278,40 +288,43 @@ document.addEventListener("DOMContentLoaded", () => {
                 context.stroke();
             });
         });
-    
-        // Draw nodes with impact analysis if enabled
+
+        // Draw nodes with impact analysis if enabled and with permanent highlight for circular dependencies
         nodes.concat(Object.keys(positions).filter(node => !nodes.includes(node))).forEach((node) => {
             const { x, y } = positions[node];
             const isHighlighted = (highlightedNode === node) || connectedNodes.includes(node);
-            const isCircularNode = isCircularHighlightActive && circularDependencies.includes(node);
-    
+            const isCircularNode = circularDependencies.includes(node); // Always check if node is circular
+
             context.beginPath();
             context.arc(x, y, nodeRadius, 0, Math.PI * 2, false);
+
+            // Set fill color based on conditions
             context.fillStyle = isCircularNode ? "#D8BFD8" // Light purple for circular dependency
-                             : isHighlighted ? (isSearchHighlight && node === highlightedNode ? "red" : "#f39c12") // Red for searched node, yellow for other highlights
-                             : (nodes.includes(node) ? "#61bffc" : "#ff9999"); // Blue for internal nodes, red for external nodes
+                : isHighlighted ? (isSearchHighlight && node === highlightedNode ? "red" : "#f39c12") // Red for searched node, yellow for other highlights
+                    : (nodes.includes(node) ? "#61bffc" : "#ff9999"); // Blue for internal nodes, red for external nodes
             if (showImpactAnalysis && impactScores[node]) {
                 context.fillStyle = getImpactColor(impactScores[node]);
             }
             context.fill();
+
+            // Set border color based on highlight and circular dependency status
             context.lineWidth = 2;
-            context.strokeStyle = "#333";
+            context.strokeStyle = isHighlighted && isCircularNode ? "#f39c12" : "#333"; // Yellow border for highlighted circular nodes, black for others
             context.stroke();
-    
+
             context.font = "12px Arial";
             context.fillStyle = "#000";
             context.textAlign = "center";
             context.fillText(node, x, y + 4);
-    
+
             // Show impact score if impact analysis is enabled
             if (showImpactAnalysis && impactScores[node]) {
                 context.fillText(`Score: ${impactScores[node]}`, x, y + 20);
             }
         });
-    
+
         context.restore();
     }
-    
 
     // Function to check if a node is at a given position
     function getNodeAtPosition(x, y) {
