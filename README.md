@@ -4,7 +4,7 @@ A tool to analyze and visualize dependencies within a specified project folder. 
 
 ## Features
 
-![](GifDemo.gif)
+![Project Demo Gif](GifDemo.gif)
 - Analyzes dependencies for multiple programming languages.
 - Visualizes dependencies in a graph format, with options to pan, zoom, and scale up the graph.
 - Highlights dependencies and parent connections when a node is clicked.
